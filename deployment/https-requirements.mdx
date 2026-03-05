@@ -1,0 +1,379 @@
+---
+title: 'HTTPS Requirements'
+description: 'Understanding and configuring HTTPS for secure deployment'
+---
+
+## Overview
+
+HTTPS is a critical requirement when deploying the MC World Compressor Frontend to production environments. This guide explains why HTTPS is necessary, how mixed content policies work, and how to properly configure your deployment.
+
+<Warning>
+**Critical Security Requirement:**
+
+If your frontend is served over HTTPS (for example, on Vercel), your backend **must also use HTTPS**. Browsers block HTTP requests from HTTPS sites due to mixed content security policies.
+</Warning>
+
+## Why HTTPS Matters
+
+### Security Benefits
+
+1. **Data Encryption**: All communication between the browser and server is encrypted
+2. **Data Integrity**: Prevents tampering with data in transit
+3. **Authentication**: Verifies the server's identity
+4. **User Trust**: Modern browsers mark HTTP sites as "Not Secure"
+
+### SEO and Performance
+
+- Search engines rank HTTPS sites higher
+- HTTP/2 and HTTP/3 require HTTPS for better performance
+- Progressive Web App (PWA) features require HTTPS
+- Many modern APIs only work over HTTPS
+
+## Mixed Content Errors
+
+### What Are Mixed Content Errors?
+
+Mixed content occurs when an HTTPS page attempts to load resources over HTTP. Browsers block these requests to protect users from security vulnerabilities.
+
+**Example Scenario:**
+```
+Frontend: https://mcworldcompressor.vercel.app
+Backend:  http://api.example.com  ❌ BLOCKED!
+```
+
+### Types of Mixed Content
+
+**Active Mixed Content** (Always Blocked):
+- API requests (fetch, XMLHttpRequest)
+- WebSocket connections
+- Form submissions
+- JavaScript files
+
+**Passive Mixed Content** (May show warnings):
+- Images
+- Audio/Video
+- Fonts
+
+### Error Messages
+
+You'll see errors in the browser console like:
+
+```
+Mixed Content: The page at 'https://mcworldcompressor.vercel.app' 
+was loaded over HTTPS, but requested an insecure resource 
+'http://api.example.com/upload'. This request has been blocked; 
+the content must be served over HTTPS.
+```
+
+## Why Both Frontend and Backend Need HTTPS
+
+### Browser Security Model
+
+Modern browsers enforce strict security policies:
+
+1. **Same Protocol Requirement**: HTTPS pages can only make secure requests
+2. **Downgrade Prevention**: Prevents attackers from intercepting data
+3. **User Protection**: Ensures end-to-end encryption
+
+### Data Flow
+
+```
+User Browser → HTTPS → Frontend Server (Vercel)
+     ↓
+User Browser → HTTPS → Backend API
+```
+
+The user's browser makes requests to the backend directly. If the frontend is HTTPS, the browser requires the backend to also be HTTPS.
+
+<Note>
+Even though your frontend talks to the backend, the actual HTTP request comes from the **user's browser**, not your frontend server. This is why both must use the same protocol.
+</Note>
+
+## Configuration Guide
+
+### Frontend Configuration
+
+Set the backend URL with HTTPS in your environment variables:
+
+```bash .env
+# ✅ Correct for HTTPS frontend
+NEXT_PUBLIC_BACKEND_URL=https://api.mcworldcompressor.com
+
+# ❌ Wrong - will cause mixed content errors
+NEXT_PUBLIC_BACKEND_URL=http://api.mcworldcompressor.com
+```
+
+### Backend Configuration
+
+Your backend must be configured to accept HTTPS connections. Common approaches:
+
+#### Option 1: Platform-Managed SSL
+
+Use a platform that provides automatic HTTPS:
+
+- **Railway**: Automatic HTTPS for all deployments
+- **Render**: Free SSL certificates
+- **Fly.io**: Automatic SSL
+- **Heroku**: Free SSL certificates
+- **AWS Elastic Beanstalk**: Can enable HTTPS
+
+#### Option 2: Reverse Proxy (Nginx/Apache)
+
+Use a reverse proxy to handle SSL:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name api.mcworldcompressor.com;
+    
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+    
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+#### Option 3: Let's Encrypt
+
+Use free SSL certificates from Let's Encrypt:
+
+```bash
+# Install certbot
+sudo apt-get install certbot
+
+# Get certificate
+sudo certbot certonly --standalone -d api.mcworldcompressor.com
+
+# Certificates will be in /etc/letsencrypt/live/
+```
+
+#### Option 4: Cloudflare
+
+Use Cloudflare as a reverse proxy:
+
+1. Point your domain DNS to Cloudflare
+2. Enable SSL/TLS in Cloudflare dashboard
+3. Set SSL mode to "Full" or "Full (Strict)"
+4. Cloudflare provides free SSL certificates
+
+### Development vs Production
+
+| Environment | Frontend Protocol | Backend Protocol |
+|-------------|-------------------|------------------|
+| **Local Development** | HTTP (localhost:3000) | HTTP (localhost:8080) |
+| **Production** | HTTPS (Vercel, etc.) | HTTPS (required) |
+
+<Note>
+In local development, both frontend and backend can use HTTP since mixed content policies don't apply to localhost.
+</Note>
+
+## Testing HTTPS Configuration
+
+### 1. Verify SSL Certificate
+
+Check that your backend has a valid SSL certificate:
+
+```bash
+curl -I https://api.mcworldcompressor.com
+```
+
+Look for:
+```
+HTTP/2 200
+```
+
+### 2. Test in Browser
+
+1. Open your HTTPS frontend in a browser
+2. Open Developer Tools (F12)
+3. Go to Console tab
+4. Look for any mixed content errors
+5. Test file upload functionality
+
+### 3. Check Security
+
+Verify SSL configuration quality:
+
+- **SSL Labs Test**: https://www.ssllabs.com/ssltest/
+- Check for A or A+ rating
+- Ensure modern TLS versions (1.2, 1.3)
+
+## Common Issues and Solutions
+
+### Issue: Mixed Content Errors
+
+**Symptom:** File uploads fail with mixed content errors
+
+**Solution:**
+1. Check `NEXT_PUBLIC_BACKEND_URL` uses `https://`
+2. Verify backend is accessible via HTTPS
+3. Test backend directly: `curl https://your-backend.com`
+4. Check browser console for specific error messages
+
+### Issue: SSL Certificate Errors
+
+**Symptom:** "Your connection is not private" or "NET::ERR_CERT_AUTHORITY_INVALID"
+
+**Solution:**
+1. Use a valid SSL certificate from a trusted CA (Let's Encrypt, etc.)
+2. Ensure certificate matches your domain
+3. Check certificate hasn't expired
+4. Verify certificate chain is complete
+
+### Issue: CORS with HTTPS
+
+**Symptom:** CORS errors after enabling HTTPS
+
+**Solution:**
+Update backend CORS configuration to allow HTTPS origin:
+
+```javascript
+// Backend CORS config
+const corsOptions = {
+  origin: 'https://mcworldcompressor.vercel.app',
+  credentials: true
+};
+```
+
+### Issue: Redirect Loops
+
+**Symptom:** Page keeps redirecting between HTTP and HTTPS
+
+**Solution:**
+1. Configure your platform to enforce HTTPS
+2. Set proper redirect rules (HTTP → HTTPS)
+3. Check reverse proxy configuration
+
+## Best Practices
+
+### 1. Always Use HTTPS in Production
+
+<Warning>
+**Never deploy to production without HTTPS.** Both frontend and backend must use HTTPS.
+</Warning>
+
+### 2. Enforce HTTPS
+
+Redirect all HTTP traffic to HTTPS:
+
+```javascript next.config.mjs
+const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'header', key: 'x-forwarded-proto', value: 'http' }],
+        permanent: true,
+        destination: 'https://mcworldcompressor.com/:path*'
+      }
+    ];
+  }
+};
+```
+
+### 3. Use HSTS Headers
+
+Enable HTTP Strict Transport Security:
+
+```javascript next.config.mjs
+const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
+          }
+        ]
+      }
+    ];
+  }
+};
+```
+
+### 4. Monitor Certificate Expiry
+
+- SSL certificates expire (Let's Encrypt: 90 days)
+- Set up automated renewal
+- Monitor expiry dates
+- Test renewal process
+
+### 5. Use Environment Variables
+
+Never hardcode URLs in your code:
+
+```javascript
+// ✅ Good
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+// ❌ Bad
+const backendUrl = 'http://api.example.com';
+```
+
+## Platform-Specific Guides
+
+### Vercel Frontend + Railway Backend
+
+1. **Frontend**: Vercel provides automatic HTTPS
+2. **Backend**: Railway provides automatic HTTPS
+3. Set `NEXT_PUBLIC_BACKEND_URL` to Railway's HTTPS URL
+
+### Custom Domain Setup
+
+1. **Frontend**: Add custom domain in Vercel
+2. **Backend**: Add custom domain in your backend platform
+3. Update `NEXT_PUBLIC_BACKEND_URL` to custom domain
+4. Update `NEXT_PUBLIC_SITE_URL` for sitemap
+
+### Docker Deployment
+
+Use a reverse proxy (Nginx, Traefik, Caddy) in front of containers:
+
+```yaml docker-compose.yml
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/ssl
+  
+  frontend:
+    build: ./frontend
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=https://api.example.com
+  
+  backend:
+    build: ./backend
+    expose:
+      - "8080"
+```
+
+## Verification Checklist
+
+Before going live:
+
+- [ ] Frontend is accessible via HTTPS
+- [ ] Backend is accessible via HTTPS
+- [ ] `NEXT_PUBLIC_BACKEND_URL` uses `https://`
+- [ ] No mixed content errors in browser console
+- [ ] File upload works correctly
+- [ ] SSL certificate is valid and trusted
+- [ ] SSL certificate won't expire soon
+- [ ] CORS is configured for HTTPS origin
+- [ ] HSTS headers are enabled
+- [ ] HTTP redirects to HTTPS
+
+## Additional Resources
+
+- [MDN: Mixed Content](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content)
+- [Let's Encrypt: Free SSL Certificates](https://letsencrypt.org/)
+- [SSL Labs: Test Your SSL Configuration](https://www.ssllabs.com/ssltest/)
+- [Vercel: HTTPS and SSL](https://vercel.com/docs/concepts/edge-network/encryption)

@@ -1,0 +1,165 @@
+---
+title: 'Configuration'
+description: 'Configure your development environment for the MC World Compressor Frontend'
+---
+
+## Environment Variables
+
+The MC World Compressor Frontend requires environment variables to connect to the backend API.
+
+### Creating the .env File
+
+Create a `.env` file in the root of your project:
+
+```bash
+touch .env
+```
+
+Add the following environment variable:
+
+```bash .env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+```
+
+<Warning>
+Replace `http://localhost:8080` with your actual backend URL. If you're running the backend locally, this is typically the default port.
+</Warning>
+
+### NEXT_PUBLIC_BACKEND_URL
+
+This is the primary environment variable used by the application:
+
+- **Purpose**: Points to the backend API that handles world compression
+- **Format**: Full URL including protocol (http:// or https://)
+- **Access**: Available in both client and server components (prefixed with `NEXT_PUBLIC_`)
+
+**Examples:**
+
+<CodeGroup>
+
+```bash Local Development
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+```
+
+```bash Production
+NEXT_PUBLIC_BACKEND_URL=https://api.yourbackend.com
+```
+
+</CodeGroup>
+
+### HTTPS Requirements
+
+<Warning>
+**Important Security Note:**
+
+If your frontend is served over HTTPS (e.g., deployed on Vercel, Netlify, or any HTTPS environment), your backend **must also use HTTPS**.
+
+Browsers block HTTP requests from HTTPS sites due to mixed content security policies.
+</Warning>
+
+**Example scenarios:**
+
+| Frontend Protocol | Backend Protocol | Result |
+|-------------------|------------------|--------|
+| HTTP (localhost)  | HTTP            | ✅ Works |
+| HTTPS (production)| HTTPS           | ✅ Works |
+| HTTPS (production)| HTTP            | ❌ Blocked by browser |
+
+## Next.js Configuration
+
+The Next.js configuration is minimal and uses default settings:
+
+```javascript next.config.mjs
+/** @type {import('next').NextConfig} */
+const nextConfig = {};
+
+export default nextConfig;
+```
+
+The project uses Next.js defaults, which include:
+
+- **App Router** enabled by default
+- **React Server Components** enabled
+- **Automatic code splitting**
+- **Image optimization** via `next/image`
+- **Font optimization** via `next/font`
+
+## TailwindCSS Configuration
+
+The project uses TailwindCSS v4 with PostCSS integration.
+
+### PostCSS Configuration
+
+```javascript postcss.config.mjs
+const config = {
+  plugins: ["@tailwindcss/postcss"],
+};
+
+export default config;
+```
+
+### Global Styles
+
+TailwindCSS is imported in `app/globals.css`:
+
+```css app/globals.css
+@import "tailwindcss";
+```
+
+<Note>
+TailwindCSS v4 uses a simplified configuration approach. Instead of a separate `tailwind.config.js` file, styles are configured directly through the CSS import.
+</Note>
+
+## Path Aliases
+
+Path aliases are configured in `jsconfig.json`:
+
+```json jsconfig.json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
+```
+
+This allows you to use `@/` as a shortcut to the root directory:
+
+```javascript
+// Instead of:
+import Component from '../../../components/Component'
+
+// You can use:
+import Component from '@/components/Component'
+```
+
+## Sitemap Configuration
+
+The project includes sitemap generation via `next-sitemap`:
+
+- Configured in `next-sitemap.config.js`
+- Runs automatically after build (`postbuild` script)
+- Generates `sitemap.xml` and `robots.txt`
+
+<Tip>
+Sitemap files are git-ignored and regenerated on each build.
+</Tip>
+
+## Middleware
+
+The project uses Next.js middleware for internationalization routing:
+
+- Located at `middleware.js`
+- Handles locale detection and routing
+- Supports EN, ES, HI, and AR languages
+
+## ESLint Configuration
+
+ESLint is configured for Next.js projects:
+
+```bash
+npm run lint
+```
+
+This runs Next.js's built-in ESLint configuration to catch common issues.

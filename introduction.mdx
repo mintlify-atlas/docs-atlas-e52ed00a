@@ -1,0 +1,215 @@
+---
+title: "Introduction"
+description: "Learn how MC World Compressor optimizes Minecraft worlds using intelligent chunk removal"
+---
+
+## What is MC World Compressor?
+
+MC World Compressor is a free, open-source web application designed to compress Minecraft Java Edition worlds efficiently. Built with Next.js and React, it provides a modern, user-friendly interface for optimizing your Minecraft worlds without compromising the integrity of your builds and explored areas.
+
+The application can reduce world file sizes by **47-75%** on average, making it easier to share, backup, and store your Minecraft worlds.
+
+<CardGroup cols={2}>
+  <Card title="Free & Open Source" icon="code">
+    Licensed under CC BY-NC-SA 4.0, completely free to use for non-commercial purposes.
+  </Card>
+  <Card title="Multi-Language Support" icon="language">
+    Available in English, Spanish, Hindi, and Arabic with automatic locale detection.
+  </Card>
+  <Card title="Large File Support" icon="file">
+    Upload worlds up to 4GB with intelligent chunked file transfer.
+  </Card>
+  <Card title="Smart Optimization" icon="brain">
+    Uses the thanos library for intelligent chunk analysis and removal.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+MC World Compressor uses the [thanos](https://github.com/aternosorg/thanos) library, a powerful tool for Minecraft world optimization. The compression process is intelligent and preserves everything that matters while removing unused data.
+
+<Steps>
+  <Step title="Analyze Chunks">
+    The system scans your Minecraft world and analyzes all chunks to identify which ones contain player modifications, structures, or important data.
+  </Step>
+  <Step title="Remove Unused Chunks">
+    Chunks that have never been explored or modified by players are safely removed. This includes:
+    - Unvisited terrain chunks
+    - Empty or untouched areas
+    - Redundant world data
+    
+    **Your builds, items, and progress are completely safe** - only truly unused chunks are removed.
+  </Step>
+  <Step title="Recompress & Download">
+    The optimized world is recompressed and made available for download. The result is a smaller file that loads faster and takes up less storage space.
+  </Step>
+</Steps>
+
+## Compression Process
+
+Here's a visual breakdown of how the compression works:
+
+```mermaid
+graph LR
+    A[Upload World] --> B[Extract & Analyze]
+    B --> C[Identify Unused Chunks]
+    C --> D[Remove Empty Regions]
+    D --> E[Recompress World]
+    E --> F[Download Optimized]
+```
+
+<Note>
+  The compression is **non-destructive** to your actual gameplay data. All explored areas, builds, player inventories, and world progress remain intact.
+</Note>
+
+## Key Features
+
+### Supported Formats
+
+MC World Compressor accepts multiple archive formats:
+
+- **`.zip`** - Standard ZIP archives
+- **`.tar`** - TAR archives  
+- **`.tar.gz`** - Gzip-compressed TAR archives
+
+### Upload Size Limits
+
+<Warning>
+  Maximum upload size is **4GB**. If your world is larger, consider removing unnecessary files (logs, backups) before compressing.
+</Warning>
+
+### Multi-Language Interface
+
+The application automatically detects your browser language and supports:
+
+- **English (EN)**
+- **Spanish (ES)**  
+- **Hindi (HI)**
+- **Arabic (AR)**
+
+You can manually switch languages using the language selector in the navigation.
+
+## Real-World Results
+
+Based on actual compression results:
+
+<CardGroup cols={3}>
+  <Card title="Small Worlds">
+    **24MB → 6MB**
+    
+    75% size reduction
+  </Card>
+  <Card title="Medium Worlds">
+    **94MB → 29MB**
+    
+    69% size reduction
+  </Card>
+  <Card title="Large Worlds">
+    **1340MB → 715MB**
+    
+    47% size reduction
+  </Card>
+</CardGroup>
+
+<Tip>
+  Worlds with more unexplored areas typically achieve higher compression ratios. Well-explored worlds with extensive builds will see smaller (but still significant) reductions.
+</Tip>
+
+## Architecture Overview
+
+The application is split into two parts:
+
+### Frontend (This Repository)
+
+Built with:
+- **Next.js 16+** - React framework with App Router
+- **React 19** - Latest React features
+- **TailwindCSS 4** - Modern, utility-first styling
+- **Custom i18n** - Multi-language translation system
+
+### Backend
+
+The backend handles:
+- File upload processing with chunked transfer
+- Integration with the thanos library for chunk analysis
+- Compression queue management
+- Download delivery
+
+<Note>
+  The frontend requires a backend URL configured via the `NEXT_PUBLIC_BACKEND_URL` environment variable. See the [Quickstart](/quickstart) guide for setup instructions.
+</Note>
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Server Backups" icon="server">
+    Reduce the size of regular world backups to save storage costs and speed up backup/restore operations. Particularly useful for server administrators managing multiple worlds or maintaining historical backups.
+  </Accordion>
+  
+  <Accordion title="World Sharing" icon="share-nodes">
+    Make it easier to share your Minecraft creations by reducing file sizes for upload to cloud storage, forums, or direct downloads. A 1GB world becomes much more manageable at 500MB.
+  </Accordion>
+  
+  <Accordion title="Storage Optimization" icon="hard-drive">
+    Free up disk space on your server or local machine by removing chunks you've never explored. Perfect for long-running worlds that have accumulated unnecessary terrain data.
+  </Accordion>
+  
+  <Accordion title="Faster World Loading" icon="gauge-high">
+    Smaller world files mean faster loading times when starting your Minecraft server or loading the world in single-player.
+  </Accordion>
+</AccordionGroup>
+
+## What Gets Preserved
+
+MC World Compressor is designed to be **safe and non-destructive**. The following data is always preserved:
+
+- All player builds and structures
+- Player inventories and ender chests
+- World spawn point and game rules
+- Entity data (mobs, animals, items)
+- Explored chunks and terrain
+- All dimensions (Overworld, Nether, End)
+- Village data and generated structures
+- Redstone contraptions and mechanisms
+
+## What Gets Removed
+
+Only unused data is removed:
+
+- Chunks that have never been visited by players
+- Empty terrain in unexplored regions
+- Redundant region files with no modifications
+
+## License
+
+MC World Compressor is licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**.
+
+### What This Means:
+
+- ✅ **Free to use** for personal and non-commercial purposes
+- ✅ **Open source** - you can view, modify, and reuse the code
+- ✅ **Share freely** - distribute and remix as needed
+- ❌ **No commercial use** - cannot be used for profit
+- ⚖️ **Attribution required** - must credit this project
+- 🔄 **ShareAlike** - derivatives must use the same license
+
+<Tip>
+  **Exception**: You can accept donations to cover server hosting costs, as long as donations don't unlock features or differentiate users in any way.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Get the application running locally in minutes
+  </Card>
+  <Card title="Development Setup" icon="code" href="/development/setup">
+    Set up your development environment
+  </Card>
+  <Card title="Features" icon="stars" href="/features/compression">
+    Explore compression features in detail
+  </Card>
+  <Card title="Deployment" icon="cloud" href="/deployment/production">
+    Deploy your own instance
+  </Card>
+</CardGroup>

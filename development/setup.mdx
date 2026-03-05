@@ -1,0 +1,106 @@
+---
+title: 'Development Setup'
+description: 'Get started with the MC World Compressor Frontend development environment'
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js**: Version 18.x or higher (recommended: 20.x or 24.x)
+- **npm**: Version 9.x or higher (comes with Node.js)
+- **Git**: For cloning the repository
+
+<Tip>
+You can check your Node.js version by running `node --version` in your terminal.
+</Tip>
+
+## Clone the Repository
+
+First, clone the MC World Compressor Frontend repository:
+
+```bash
+git clone https://github.com/MC-World-Compressor/Frontend.git
+cd Frontend
+```
+
+## Install Dependencies
+
+Install the project dependencies using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install
+```
+
+```bash yarn
+yarn install
+```
+
+```bash pnpm
+pnpm install
+```
+
+</CodeGroup>
+
+This will install all the required dependencies including:
+
+- **Next.js** (v16.x) - The React framework
+- **React** (v19.x) - UI library
+- **TailwindCSS** (v4.x) - Utility-first CSS framework
+- **next-sitemap** - Sitemap generation
+
+## Project Structure
+
+The project follows the Next.js App Router structure:
+
+```
+Frontend/
+├── app/                      # Next.js app directory
+│   ├── [locale]/            # Internationalized routes
+│   ├── api/                 # API routes
+│   ├── globals.css          # Global styles with TailwindCSS
+│   ├── layout.js            # Root layout component
+│   └── not-found.js         # 404 page
+├── components/              # React components
+│   ├── BackButton.js
+│   ├── Footer.js
+│   ├── LanguageSelector.js
+│   └── Navbar.js
+├── lib/                     # Utility libraries
+│   ├── i18n.js             # Internationalization config
+│   └── translations.js      # Translation utilities
+├── locales/                 # Translation files (EN/ES/HI/AR)
+├── public/                  # Static assets
+│   └── assets/             # Images and other assets
+├── middleware.js            # Next.js middleware (i18n routing)
+├── next.config.mjs         # Next.js configuration
+├── postcss.config.mjs      # PostCSS configuration
+├── jsconfig.json           # JavaScript configuration
+├── package.json            # Project dependencies
+└── README.md               # Project documentation
+```
+
+<Note>
+The project uses the **App Router** (app directory) instead of the Pages Router, which is Next.js 13+ convention.
+</Note>
+
+## Path Aliases
+
+The project uses path aliases for cleaner imports. The `@` alias maps to the root directory:
+
+```javascript
+import Component from '@/components/Component'
+import { utility } from '@/lib/utility'
+```
+
+This is configured in `jsconfig.json`.
+
+## Next Steps
+
+Now that you have the project set up, you can:
+
+1. [Configure environment variables](/development/configuration)
+2. [Run the development server](/development/running-locally)
+3. Start building and testing features

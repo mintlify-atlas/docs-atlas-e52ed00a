@@ -1,0 +1,379 @@
+---
+title: Internationalization
+description: Multi-language support with automatic locale detection
+---
+
+## Overview
+
+MC World Compressor supports multiple languages with automatic detection based on browser preferences. The i18n system uses Next.js middleware for locale routing and a custom translation hook for component-level translations.
+
+## Supported Locales
+
+From `lib/i18n.js:1-11`:
+
+```javascript
+export const i18n = {
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'hi', 'ar'],
+};
+
+export const Locale = {
+  ES: 'es',
+  EN: 'en',
+  HI: 'hi',
+  AR: 'ar',
+};
+```
+
+<CardGroup cols={2}>
+  <Card title="English (en)" icon="flag-usa">
+    Default locale
+  </Card>
+  <Card title="Spanish (es)" icon="flag">
+    Español
+  </Card>
+  <Card title="Hindi (hi)" icon="flag">
+    हिन्दी
+  </Card>
+  <Card title="Arabic (ar)" icon="flag">
+    العربية (RTL support)
+  </Card>
+</CardGroup>
+
+## Locale Detection
+
+The middleware automatically detects and redirects users to the appropriate locale.
+
+### Detection Logic
+
+From `middleware.js:4-28`:
+
+```javascript
+function getLocale(request) {
+  // 1. Verificar si ya hay un locale en la URL
+  const pathname = request.nextUrl.pathname;
+  const pathnameIsMissingLocale = i18n.locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+  
+  if (!pathnameIsMissingLocale) return;
+
+  // 2. Obtener locale del header Accept-Language
+  const acceptLanguage = request.headers.get('accept-language');
+  
+  if (acceptLanguage) {
+    // Extraer los idiomas del header y buscar el primero soportado
+    const accepted = acceptLanguage.split(',').map(l => l.split(';')[0].trim().slice(0,2));
+    for (const lang of accepted) {
+      if (i18n.locales.includes(lang)) {
+        return lang;
+      }
+    }
+  }
+
+  // 3. Fallback al idioma por defecto
+  return i18n.defaultLocale;
+}
+```
+
+### Detection Priority
+
+<Steps>
+  <Step title="URL Locale">
+    First, check if the URL already contains a locale (e.g., `/en/upload` or `/es/upload`)
+  </Step>
+  
+  <Step title="Accept-Language Header">
+    If no locale in URL, parse the browser's `Accept-Language` header to find a supported language
+  </Step>
+  
+  <Step title="Default Fallback">
+    If no match is found, fall back to the default locale (`en`)
+  </Step>
+</Steps>
+
+## URL Routing
+
+All routes are prefixed with the locale:
+
+```text
+/en/upload          → English upload page
+/es/upload          → Spanish upload page
+/hi/status/123      → Hindi status page
+/ar                 → Arabic home page
+```
+
+### Middleware Redirect
+
+From `middleware.js:30-57`:
+
+```javascript
+export function middleware(request) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Verificar si la ruta ya tiene un locale
+  const pathnameIsMissingLocale = i18n.locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+
+  // Redireccionar si no hay locale en la URL
+  if (pathnameIsMissingLocale) {
+    const locale = getLocale(request);
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.redirect(new URL(`/${locale}`, request.url));
+    }
+    let newPath = `/${locale}${pathname.startsWith('/') ? '' : '/'}${pathname}`;
+    if (newPath === `/${locale}`) {
+      newPath = `/${locale}/`;
+    }
+    return NextResponse.redirect(new URL(newPath, request.url));
+  }
+
+  // Al final, añade el header con el locale:
+  const response = NextResponse.next();
+  const pathLocale = pathname.split('/')[1];
+  const locale = i18n.locales.includes(pathLocale) ? pathLocale : i18n.defaultLocale;
+  response.headers.set('x-path-locale', locale);
+  return response;
+}
+```
+
+<Info>
+  Visiting `/upload` automatically redirects to `/en/upload` (or your browser's preferred language)
+</Info>
+
+## Translation System
+
+Translations are stored in JSON files and accessed via custom hooks.
+
+### Translation Files Structure
+
+From `lib/translations.js:1-6`:
+
+```javascript
+import es from '../locales/es.json';
+import en from '../locales/en.json';
+import hi from '../locales/hi.json';
+import ar from "../locales/ar.json";
+
+const translations = { en, es, hi, ar };
+```
+
+Translation files are located in `/locales/` and contain nested JSON objects:
+
+```json
+{
+  "home": {
+    "title": "Minecraft World Compressor",
+    "subtitle": "Reduce your world size by up to",
+    "compressButton": "Compress Now"
+  },
+  "upload": {
+    "title": "Upload Your World",
+    "dragDrop": "Drag and drop your world here"
+  }
+}
+```
+
+### Using Translations in Client Components
+
+The `useTranslations` hook is for client-side components:
+
+From `lib/translations.js:12-27`:
+
+```javascript
+export function useTranslations(locale = "en") {
+  const t = (key, varsOrDefault = key) => {
+    let translation = getNestedTranslation(translations[locale], key) 
+      || getNestedTranslation(translations.en, key) 
+      || key;
+    
+    if (typeof varsOrDefault === 'object' && varsOrDefault !== null) {
+      Object.entries(varsOrDefault).forEach(([k, v]) => {
+        translation = translation.replace(
+          new RegExp(`{{\\s*${k}\\s*}}`, "g"),
+          v
+        );
+      });
+    }
+    return translation;
+  };
+  return { t };
+}
+```
+
+#### Example Usage
+
+From `app/[locale]/upload/page.js:5-17`:
+
+```javascript
+import { useTranslations } from '@/lib/translations';
+
+export default function HomePage({ params }) {
+  const [locale, setLocale] = useState(null);
+  const { t } = useTranslations(locale || 'en');
+  
+  // Use in JSX:
+  <h1>{t('upload.title')}</h1>
+  <p>{t('upload.dragDrop')}</p>
+  <button>{t('upload.selectFile')}</button>
+}
+```
+
+### Using Translations in Server Components
+
+For server-side rendering, use `getPageTranslations`:
+
+From `lib/translations.js:36-38`:
+
+```javascript
+export function getPageTranslations(locale, pageName) {
+  return translations[locale]?.[pageName] || translations.en?.[pageName] || {};
+}
+```
+
+#### Example Usage
+
+From `app/[locale]/page.js:52-54`:
+
+```javascript
+import { getPageTranslations } from '@/lib/translations';
+
+export default async function Inicio({ params }) {
+  const { locale } = await params;
+  const t = getPageTranslations(locale, 'home');
+  
+  // Access translations directly:
+  <h1>{t.title}</h1>
+  <p>{t.subtitle}</p>
+  <button>{t.compressButton}</button>
+}
+```
+
+## Variable Interpolation
+
+The translation system supports variable substitution:
+
+```javascript
+// Translation file:
+{
+  "welcome": "Welcome, {{name}}!"
+}
+
+// Usage:
+const { t } = useTranslations('en');
+t('welcome', { name: 'Steve' }); // Returns: "Welcome, Steve!"
+```
+
+## Nested Translation Keys
+
+Access nested translations using dot notation:
+
+From `lib/translations.js:8-10`:
+
+```javascript
+function getNestedTranslation(obj, path) {
+  return path.split(".").reduce((current, key) => current?.[key], obj);
+}
+```
+
+### Example
+
+```javascript
+// Translation file:
+{
+  "upload": {
+    "errors": {
+      "sizeLimit": "File too large",
+      "zipOnly": "Only ZIP files allowed"
+    }
+  }
+}
+
+// Usage:
+t('upload.errors.sizeLimit')  // Returns: "File too large"
+```
+
+## Fallback Behavior
+
+<Accordion title="Fallback Strategy">
+  1. **Requested locale**: First, try to get the translation from the requested locale
+  2. **English fallback**: If not found, fall back to English translation
+  3. **Key fallback**: If still not found, return the key itself
+
+  This ensures users always see something meaningful, even if translations are incomplete.
+</Accordion>
+
+## Adding a New Language
+
+To add support for a new language:
+
+<Steps>
+  <Step title="Create translation file">
+    Create a new JSON file in `/locales/` (e.g., `fr.json` for French)
+  </Step>
+  
+  <Step title="Import in translations.js">
+    ```javascript
+    import fr from '../locales/fr.json';
+    const translations = { en, es, hi, ar, fr };
+    ```
+  </Step>
+  
+  <Step title="Add to i18n config">
+    ```javascript
+    export const i18n = {
+      defaultLocale: 'en',
+      locales: ['en', 'es', 'hi', 'ar', 'fr'],
+    };
+    ```
+  </Step>
+  
+  <Step title="Update Locale enum (optional)">
+    ```javascript
+    export const Locale = {
+      EN: 'en',
+      ES: 'es',
+      HI: 'hi',
+      AR: 'ar',
+      FR: 'fr',
+    };
+    ```
+  </Step>
+</Steps>
+
+<Warning>
+  Ensure all translation keys exist in the new language file, or they will fall back to English.
+</Warning>
+
+## Middleware Configuration
+
+The middleware applies to all routes except static files and API routes:
+
+From `middleware.js:59-65`:
+
+```javascript
+export const config = {
+  matcher: [
+    // Excluir archivos estáticos y rutas de API
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|public).*)'
+  ]
+};
+```
+
+This ensures:
+- API routes (`/api/*`) are not redirected
+- Static files (`/_next/*`, `/favicon.ico`) load normally
+- Only page routes get locale prefixes
+
+## RTL Support
+
+For right-to-left languages like Arabic, the application can detect and apply RTL styles based on the locale:
+
+```javascript
+const isRTL = locale === 'ar';
+
+<div dir={isRTL ? 'rtl' : 'ltr'}>
+  {/* Content */}
+</div>
+```

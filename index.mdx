@@ -1,97 +1,108 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "MC World Compressor"
+description: "Compress Minecraft worlds using intelligent chunk removal and optimization"
 ---
 
-## Setting up
+<div className="bg-gradient-to-r from-[#956624] to-[#4e7a19] text-white rounded-lg p-8 mb-8">
+  <h1 className="text-4xl font-bold mb-4">MC World Compressor</h1>
+  <p className="text-xl mb-6">
+    A Next.js web application for compressing Minecraft Java worlds with smart chunk removal, saving up to 75% of storage space.
+  </p>
+  <div className="flex gap-4">
+    <a href="/quickstart" className="bg-white text-[#956624] px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors">
+      Get Started
+    </a>
+    <a href="https://github.com/MC-World-Compressor/Frontend" className="bg-transparent border-2 border-white text-white px-6 py-3 rounded-md font-semibold hover:bg-white/10 transition-colors">
+      View on GitHub
+    </a>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+## Key Features
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Chunked Upload" icon="upload" iconType="duotone">
+    Upload Minecraft worlds up to 4GB with intelligent chunked file transfer for reliable large file handling.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Multi-Language" icon="globe" iconType="duotone">
+    Built-in internationalization support for English, Spanish, Hindi, and Arabic with automatic locale detection.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Real-Time Status" icon="clock" iconType="duotone">
+    Track compression progress in real-time with live status updates and queue position monitoring.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Smart Compression" icon="compress" iconType="duotone">
+    Intelligent chunk removal optimizes worlds by removing unused chunks while preserving explored areas.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Quick Links
 
-Everything you need to create world-class documentation.
+<CardGroup cols={3}>
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn about the project and how it works
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running in minutes
+  </Card>
+  <Card title="Development Setup" icon="code" href="/development/setup">
+    Set up your local development environment
+  </Card>
+  <Card title="Components" icon="puzzle-piece" href="/components/navbar">
+    Explore the React components
+  </Card>
+  <Card title="API Routes" icon="route" href="/api/pages">
+    Understand the Next.js API routes
+  </Card>
+  <Card title="Deployment" icon="rocket" href="/deployment/production">
+    Deploy to production
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## What You Can Do
 
-## Need inspiration?
+<Steps>
+  <Step title="Upload Minecraft Worlds">
+    Users can upload `.zip`, `.tar`, or `.tar.gz` compressed Minecraft Java worlds up to 4GB through the web interface with drag-and-drop support.
+  </Step>
+  <Step title="Track Compression Progress">
+    Real-time status tracking shows compression progress, queue position, and estimated completion time with automatic page updates.
+  </Step>
+  <Step title="Download Optimized Worlds">
+    Download compressed worlds that are typically 47-75% smaller while maintaining all player progress and explored chunks.
+  </Step>
+</Steps>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+## Technology Stack
+
+This project is built with modern web technologies:
+
+- **Next.js 16+** - React framework with App Router
+- **React 19** - UI component library
+- **TailwindCSS 4** - Utility-first CSS framework
+- **Internationalization** - Multi-language support with custom i18n implementation
+- **Chunked Upload** - Large file handling with progress tracking
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Minecraft Server Owners">
+    Reduce world file sizes for easier backups, faster transfers, and lower storage costs. Perfect for server administrators managing multiple worlds.
+  </Accordion>
+  <Accordion title="Content Creators">
+    Share Minecraft worlds more easily by reducing file sizes for uploads to platforms like Google Drive, Dropbox, or direct downloads.
+  </Accordion>
+  <Accordion title="World Archival">
+    Archive old Minecraft worlds efficiently by removing unused chunks while preserving all built structures and explored areas.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Read the Introduction" icon="book" href="/introduction">
+    Learn more about how MC World Compressor works
+  </Card>
+  <Card title="Follow the Quickstart" icon="play" href="/quickstart">
+    Set up and run the application locally
+  </Card>
+</CardGroup>

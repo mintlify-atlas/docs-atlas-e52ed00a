@@ -1,80 +1,349 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get MC World Compressor running locally in minutes"
 ---
 
-## Get started in three steps
+## Get Started
 
-Get your documentation site running locally and make your first customization.
+Follow this guide to set up and run MC World Compressor on your local machine. You'll have the application running in under 5 minutes.
 
-### Step 1: Set up your local environment
+<Note>
+  This quickstart covers the **frontend** setup. You'll need a running backend instance to fully test world compression. The backend URL should be configured via environment variables.
+</Note>
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- **Node.js** 18+ installed ([Download Node.js](https://nodejs.org/))
+- **npm**, **yarn**, or **pnpm** package manager
+- **Git** for cloning the repository
+- A **backend instance** URL (or run the backend locally)
+
+## Installation Steps
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone the MC World Compressor frontend repository from GitHub:
+
+    ```bash
+    git clone https://github.com/MC-World-Compressor/Frontend.git
+    cd Frontend
+    ```
+
+    This will download the source code and navigate into the project directory.
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install the required npm packages using your preferred package manager:
+
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+
+      ```bash yarn
+      yarn install
+      ```
+
+      ```bash pnpm
+      pnpm install
+      ```
+    </CodeGroup>
+
+    This will install:
+    - **Next.js 16+** - React framework
+    - **React 19** - UI library
+    - **TailwindCSS 4** - Styling framework
+    - **next-sitemap** - Sitemap generation
+  </Step>
+
+  <Step title="Configure Environment Variables">
+    Create a `.env` file in the root directory by copying the example file (if available) or creating it manually:
+
+    ```bash
+    touch .env
+    ```
+
+    Add the following environment variable to your `.env` file:
+
+    ```bash .env
+    NEXT_PUBLIC_BACKEND_URL=https://your-backend-url.com
+    ```
+
+    Replace `https://your-backend-url.com` with your actual backend URL.
+
+    <Warning>
+      **HTTPS Requirement**: If your frontend is served over HTTPS (e.g., deployed on Vercel), your backend **must also use HTTPS**. Browsers block HTTP requests from HTTPS sites due to mixed content security policies.
+    </Warning>
+
+    <Accordion title="Why NEXT_PUBLIC_ prefix?">
+      In Next.js, environment variables prefixed with `NEXT_PUBLIC_` are exposed to the browser. This is necessary because the frontend makes direct API calls to the backend from the client side.
+
+      Variables without this prefix are only available server-side.
+    </Accordion>
+  </Step>
+
+  <Step title="Run the Development Server">
+    Start the Next.js development server:
+
+    <CodeGroup>
+      ```bash npm
+      npm run dev
+      ```
+
+      ```bash yarn
+      yarn dev
+      ```
+
+      ```bash pnpm
+      pnpm dev
+      ```
+    </CodeGroup>
+
+    The application will start on **http://localhost:3000**.
+
+    <Tip>
+      The development server supports hot reload - your changes will automatically appear in the browser without manual refresh!
+    </Tip>
+  </Step>
+
+  <Step title="Open in Browser">
+    Navigate to [http://localhost:3000](http://localhost:3000) in your web browser.
+
+    You should see the MC World Compressor homepage with:
+    - Welcome message and compression statistics
+    - Upload button
+    - "How it works" section
+    - FAQ section
+  </Step>
+</Steps>
+
+## Verify Installation
+
+Once the application is running, verify that everything works:
 
 <AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
+  <Accordion title="Check the Homepage" icon="house">
+    Visit `http://localhost:3000` and ensure:
+    - The page loads without errors
+    - The navigation bar appears
+    - The language selector works (EN/ES/HI/AR)
+    - The "Compress Now" button is visible
   </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
+
+  <Accordion title="Test Language Switching" icon="language">
+    Click the language selector in the navigation bar and switch between:
+    - English (EN)
+    - Spanish (ES)
+    - Hindi (HI)
+    - Arabic (AR)
+
+    The page content should update to reflect the selected language.
+  </Accordion>
+
+  <Accordion title="Navigate to Upload Page" icon="upload">
+    Click the **"Compress Now"** or **"Upload"** button to navigate to `/en/upload` (or your selected language).
+
+    You should see:
+    - File upload dropzone
+    - Drag-and-drop area
+    - File format instructions (.zip, .tar, .tar.gz)
+    - World structure examples
   </Accordion>
 </AccordionGroup>
 
-### Step 2: Deploy your changes
+<Warning>
+  **Backend Connection**: The upload functionality will only work if your backend is running and properly configured in the `.env` file. Without a valid backend, uploads will fail.
+</Warning>
+
+## Build for Production
+
+When you're ready to deploy or test a production build:
+
+<Steps>
+  <Step title="Build the Application">
+    Create an optimized production build:
+
+    <CodeGroup>
+      ```bash npm
+      npm run build
+      ```
+
+      ```bash yarn
+      yarn build
+      ```
+
+      ```bash pnpm
+      pnpm build
+      ```
+    </CodeGroup>
+
+    This will:
+    - Compile and optimize all pages
+    - Generate static assets
+    - Create a sitemap (via `next-sitemap`)
+  </Step>
+
+  <Step title="Start the Production Server">
+    Run the production server:
+
+    <CodeGroup>
+      ```bash npm
+      npm start
+      ```
+
+      ```bash yarn
+      yarn start
+      ```
+
+      ```bash pnpm
+      pnpm start
+      ```
+    </CodeGroup>
+
+    The production build will be available at **http://localhost:3000**.
+  </Step>
+</Steps>
+
+## Environment Configuration
+
+### Required Variables
+
+<ParamField path="NEXT_PUBLIC_BACKEND_URL" type="string" required>
+  The URL of your backend server that handles file uploads and compression.
+
+  **Example**: `https://api.mccompressor.com`
+
+  <Warning>
+    Must use HTTPS if your frontend is served over HTTPS (e.g., on Vercel).
+  </Warning>
+</ParamField>
+
+### Backend Requirements
+
+Your backend must:
+
+- Accept POST requests to `/api/subir` for chunked file uploads
+- Support multipart/form-data uploads
+- Handle files up to 4GB in size
+- Integrate with the [thanos](https://github.com/aternosorg/thanos) library
+- Return job/server IDs for status tracking
+
+## Common Issues
 
 <AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+  <Accordion title="HTTPS Mixed Content Error" icon="shield-exclamation">
+    **Error**: "Mixed content" or "blocked by CORS"
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    **Solution**: Ensure your backend uses HTTPS if the frontend is served over HTTPS. Update `NEXT_PUBLIC_BACKEND_URL` to use `https://` instead of `http://`.
+  </Accordion>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
+  <Accordion title="Backend Connection Failed" icon="link-slash">
+    **Error**: Upload fails or times out
+
+    **Solution**: 
+    1. Verify the backend URL in `.env` is correct
+    2. Check that the backend server is running
+    3. Test the backend API endpoint directly using curl or Postman
+    4. Check CORS configuration on the backend
+  </Accordion>
+
+  <Accordion title="Port Already in Use" icon="circle-exclamation">
+    **Error**: "Port 3000 is already in use"
+
+    **Solution**: Either stop the process using port 3000, or run Next.js on a different port:
+
+    ```bash
+    PORT=3001 npm run dev
+    ```
+  </Accordion>
+
+  <Accordion title="Module Not Found" icon="box-open">
+    **Error**: "Cannot find module" or "Module not found"
+
+    **Solution**: Delete `node_modules` and reinstall:
+
+    ```bash
+    rm -rf node_modules
+    npm install
+    ```
   </Accordion>
 </AccordionGroup>
 
-### Step 3: Go live
+## Project Structure
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+Understanding the project structure helps you navigate the codebase:
 
-## Next steps
+```
+Frontend/
+├── app/
+│   └── [locale]/              # Internationalized routes
+│       ├── page.js            # Homepage (app/[locale]/page.js:1)
+│       ├── upload/
+│       │   └── page.js        # Upload page (app/[locale]/upload/page.js:1)
+│       └── status/
+│           └── [id]/
+│               └── page.js    # Status tracking page
+├── lib/
+│   └── translations.js        # i18n translation utilities
+├── public/
+│   └── assets/                # Static assets and images
+├── .env                       # Environment variables (create this)
+├── package.json               # Dependencies and scripts
+└── next.config.js             # Next.js configuration
+```
 
-Now that you have your docs running, explore these key features:
+## Key Files
 
 <CardGroup cols={2}>
+  <Card title="Homepage" icon="file-code">
+    **Location**: `app/[locale]/page.js:1`
+    
+    Main landing page with compression info, examples, and FAQ.
+  </Card>
+  <Card title="Upload Page" icon="cloud-arrow-up">
+    **Location**: `app/[locale]/upload/page.js:1`
+    
+    File upload interface with drag-and-drop and chunked transfer.
+  </Card>
+  <Card title="Translations" icon="language">
+    **Location**: `lib/translations.js`
+    
+    Multi-language translation system for EN/ES/HI/AR.
+  </Card>
+  <Card title="Package Config" icon="box">
+    **Location**: `package.json:1`
+    
+    Dependencies: Next.js 16+, React 19, TailwindCSS 4.
+  </Card>
+</CardGroup>
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+## Next Steps
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+Now that you have MC World Compressor running locally, explore these topics:
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+<CardGroup cols={2}>
+  <Card title="Development Setup" icon="code" href="/development/setup">
+    Deep dive into the development environment and best practices.
+  </Card>
+  <Card title="Configuration Guide" icon="gear" href="/development/configuration">
+    Learn about all available configuration options.
+  </Card>
+  <Card title="Understanding Compression" icon="compress" href="/features/compression">
+    How the compression algorithm works under the hood.
+  </Card>
+  <Card title="Deployment Guide" icon="rocket" href="/deployment/production">
+    Deploy your instance to production (Vercel, AWS, etc.).
+  </Card>
+  <Card title="File Upload Component" icon="upload" href="/features/file-upload">
+    Understand the chunked file upload implementation.
+  </Card>
+  <Card title="Internationalization" icon="globe" href="/features/internationalization">
+    Add new languages or modify existing translations.
+  </Card>
 </CardGroup>
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  **Need Help?** Check the [GitHub Issues](https://github.com/MC-World-Compressor/Frontend/issues) or create a new issue if you encounter problems.
 </Note>

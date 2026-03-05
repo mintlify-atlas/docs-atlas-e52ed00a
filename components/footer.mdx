@@ -1,0 +1,160 @@
+---
+title: 'Footer'
+description: 'Application footer with contact information and copyright notice'
+---
+
+## Overview
+
+The `Footer` component displays application information, contact details, developer attribution, and copyright notice at the bottom of each page. It supports internationalization and dark mode, with a responsive layout that adapts to different screen sizes.
+
+## Props
+
+<ParamField path="locale" type="string" default="en">
+  The current locale for translations (e.g., 'en', 'es', 'hi', 'ar')
+</ParamField>
+
+## Key Features
+
+- **Internationalization**: Uses translation system via `getPageTranslations`
+- **Dark Mode Support**: Automatic dark mode styling with Tailwind classes
+- **Responsive Layout**: Stacks vertically on mobile, horizontal on desktop
+- **Dynamic Copyright Year**: Automatically displays the current year
+- **Contact Information**: Includes email link with pre-filled subject
+- **Developer Attribution**: Links to developer's GitHub profile
+- **Hover Effects**: Interactive link hover states for better UX
+
+## Usage Example
+
+```jsx
+import Footer from '@/components/Footer';
+
+export default function Layout({ params }) {
+  const locale = params.locale || 'en';
+  
+  return (
+    <div className="min-h-screen flex flex-col">
+      {/* Page content */}
+      <Footer locale={locale} />
+    </div>
+  );
+}
+```
+
+## Implementation
+
+```jsx
+import { getPageTranslations } from '@/lib/translations';
+
+export default function Footer({ locale = 'en' }) {
+  const t = getPageTranslations(locale, 'footer');
+  const currentYear = new Date().getFullYear();
+  
+  return (
+    <footer className="bg-gray-200 dark:bg-gray-800 py-8 mt-auto">
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-6">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="mb-4 md:mb-0">
+            <h2 className="text-lg font-bold text-gray-800 dark:text-gray-200">
+              MC World Compressor
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <u>
+                <a 
+                  href="mailto:srkktua@protonmail.com?subject=MCWCompressor" 
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  srkktua@protonmail.com
+                </a>
+              </u>
+            </p>
+          </div>
+          
+          <div className="text-center md:text-right text-sm text-gray-600 dark:text-gray-400">
+            <p>
+              {t.developedBy}{' '}
+              <u>
+                <a 
+                  href="https://github.com/Papela" 
+                  target="_blank" 
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  Papela
+                </a>
+              </u>
+            </p>
+            <p className="mt-1">
+              &copy; {currentYear} MC World Compressor. {t.rights}
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+```
+
+## Translation Keys
+
+The component uses the following translation keys from the `footer` namespace:
+
+- `t.developedBy` - Text for developer attribution (e.g., "Developed by")
+- `t.rights` - Text for rights statement (e.g., "All rights reserved")
+
+## Layout Structure
+
+### Desktop View (md and above)
+- Two-column layout with left-aligned contact info and right-aligned attribution
+- Maximum width container (max-w-6xl) centered on the page
+
+### Mobile View
+- Single-column stacked layout
+- Centered alignment for better readability
+- Bottom margin spacing between sections
+
+## Contact Features
+
+### Email Link
+The email link includes a pre-filled subject line for convenience:
+
+```jsx
+<a href="mailto:srkktua@protonmail.com?subject=MCWCompressor">
+  srkktua@protonmail.com
+</a>
+```
+
+### External Links
+Developer GitHub link opens in a new tab with proper security:
+
+```jsx
+<a href="https://github.com/Papela" target="_blank">
+  Papela
+</a>
+```
+
+## Styling
+
+The Footer uses Tailwind CSS for:
+- **Background**: Light gray in light mode, dark gray in dark mode
+- **Spacing**: Vertical padding (py-8) and responsive horizontal padding
+- **Typography**: Different font sizes and weights for hierarchy
+- **Hover States**: Color transitions on link hover
+- **Margin**: `mt-auto` to push footer to bottom when used in flex container
+
+## Best Practices
+
+1. **Use in Flex Container**: Place footer inside a flex container with min-h-screen to ensure it stays at the bottom:
+   ```jsx
+   <div className="min-h-screen flex flex-col">
+     <Navbar />
+     <main className="flex-1">{children}</main>
+     <Footer locale={locale} />
+   </div>
+   ```
+
+2. **Pass Current Locale**: Always pass the current locale for proper translations
+
+3. **Dark Mode**: The footer automatically adapts to the user's color scheme preference
+
+## Dependencies
+
+- `@/lib/translations` - Translation utilities for internationalization

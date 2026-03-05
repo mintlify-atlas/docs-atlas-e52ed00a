@@ -1,0 +1,164 @@
+---
+title: 'Language Selector'
+description: 'Client-side language switcher with dropdown menu and flag icons'
+---
+
+## Overview
+
+The `LanguageSelector` component is a client-side dropdown menu that allows users to switch between supported languages. It displays the current language with a flag icon and provides a dropdown menu to select from English, Spanish, Hindi, and Arabic.
+
+## Props
+
+<ParamField path="locale" type="string" required>
+  The current active locale (e.g., 'en', 'es', 'hi', 'ar')
+</ParamField>
+
+## Key Features
+
+- **Client-Side Component**: Uses 'use client' directive for interactive behavior
+- **Dropdown Menu**: Toggle-able language selection dropdown
+- **Click Outside to Close**: Automatically closes when clicking outside the component
+- **Flag Icons**: SVG flag representations for each supported language
+- **Locale-Aware Routing**: Preserves current path when switching languages
+- **SEO Support**: Includes alternate language links in the head for SEO
+- **Disabled Current Language**: Current language option is visually disabled
+- **Smooth Animations**: Fade in/out transitions for dropdown visibility
+
+## Supported Languages
+
+- **English (en)**: USA flag
+- **Español (es)**: Spanish flag
+- **हिंदी (hi)**: Indian flag
+- **العربية (ar)**: Yemeni flag
+
+## Usage Example
+
+```jsx
+import LanguageSelector from '@/components/LanguageSelector';
+
+export default function Navbar({ locale }) {
+  return (
+    <nav>
+      <div className="flex items-center gap-4">
+        <LanguageSelector locale={locale} />
+        {/* Other navigation items */}
+      </div>
+    </nav>
+  );
+}
+```
+
+## Implementation
+
+```jsx
+'use client';
+
+import { useRouter, usePathname } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import Head from 'next/head';
+
+export default function LanguageSelector({ locale }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [abierto, setAbierto] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!abierto) return;
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setAbierto(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [abierto]);
+
+  const changeLanguage = (newLocale) => {
+    setAbierto(false);
+    if (newLocale === locale) return;
+    let newPathname;
+    if (/^\/[a-z]{2}(\/|$)/.test(pathname)) {
+      newPathname = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, `/${newLocale}`);
+    } else {
+      newPathname = `/${newLocale}${pathname.startsWith('/') ? '' : '/'}${pathname}`;
+    }
+    router.push(newPathname);
+  };
+  
+  return (
+    <>
+      <Head>
+        <link rel="alternate" hrefLang="en" href="/en" />
+        <link rel="alternate" hrefLang="es" href="/es" />
+        <link rel="alternate" hrefLang="hi" href="/hi" />
+        <link rel="alternate" hrefLang="ar" href="/ar" />
+        <link rel="alternate" hrefLang="x-default" href="/en" />
+      </Head>
+      <div className="relative" ref={ref}>
+        <button
+          type="button"
+          className="px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center cursor-pointer"
+          onClick={() => setAbierto((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={abierto}
+        >
+          {/* Flag icon based on current locale */}
+          {locale.toUpperCase()}
+        </button>
+        <div
+          className={`absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg transition-all duration-200 z-50
+          ${abierto ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+          style={{ pointerEvents: abierto ? 'auto' : 'none' }}
+          role="listbox"
+          tabIndex={-1}
+        >
+          {/* Language options */}
+        </div>
+      </div>
+    </>
+  );
+}
+```
+
+## How Language Switching Works
+
+1. **Path Detection**: The component detects the current locale in the URL path using regex
+2. **Path Replacement**: When switching languages, it replaces the locale segment in the URL
+3. **Navigation**: Uses Next.js router to navigate to the new localized path
+4. **State Management**: Tracks dropdown open/close state with `useState`
+5. **Outside Click Detection**: Uses `useRef` and `useEffect` to detect clicks outside the dropdown
+
+## Accessibility Features
+
+- **ARIA Attributes**: Uses `aria-haspopup`, `aria-expanded`, and `role` attributes
+- **Keyboard Navigation**: Supports standard dropdown keyboard interactions
+- **Flag Alt Text**: Each flag has descriptive `aria-label` attributes
+- **Disabled State**: Current language option is properly disabled with visual feedback
+
+## Styling
+
+The component includes:
+- Smooth opacity transitions for dropdown show/hide
+- Dark mode support with appropriate color schemes
+- Hover states for better user feedback
+- Rounded corners and shadow for the dropdown
+- Responsive flag icon sizing
+
+## SEO Optimization
+
+The component includes `<Head>` elements with alternate language links for SEO:
+
+```jsx
+<link rel="alternate" hrefLang="en" href="/en" />
+<link rel="alternate" hrefLang="es" href="/es" />
+<link rel="alternate" hrefLang="hi" href="/hi" />
+<link rel="alternate" hrefLang="ar" href="/ar" />
+<link rel="alternate" hrefLang="x-default" href="/en" />
+```
+
+## Dependencies
+
+- `next/navigation` - Router and pathname hooks
+- `react` - State and effect hooks
+- `next/head` - SEO meta tags

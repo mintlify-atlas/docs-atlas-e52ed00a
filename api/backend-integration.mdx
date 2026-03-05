@@ -1,0 +1,403 @@
+---
+title: 'Backend Integration'
+description: 'How the frontend connects to the backend API'
+---
+
+## Overview
+
+The MC World Compressor frontend communicates with a separate backend service for world compression processing. All backend communication is handled through environment variables and proxy routes.
+
+## Backend URL Configuration
+
+### Environment Variable
+
+The backend URL is configured via the `NEXT_PUBLIC_BACKEND_URL` environment variable.
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=https://api.example.com
+```
+
+<Warning>
+  The `NEXT_PUBLIC_` prefix makes this variable available in both server and client components. Ensure the URL points to your production backend in production environments.
+</Warning>
+
+### Usage in Client Components
+
+```javascript
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+const response = await fetch(`${backendUrl}/api/subir`, {
+  method: 'POST',
+  body: formData,
+});
+```
+
+### Usage in Server Components (API Routes)
+
+```javascript
+export async function GET() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const response = await fetch(`${backendUrl}/api/cola`);
+  const data = await response.json();
+  return Response.json(data);
+}
+```
+
+---
+
+## API Proxy Routes
+
+The frontend uses Next.js API routes as proxies to the backend. This provides several benefits:
+
+- **CORS handling** - Avoids cross-origin issues
+- **Security** - Hides backend URL from direct client access
+- **Error handling** - Standardized error responses
+- **Header management** - Proper content-type and disposition headers
+
+### Queue Status Proxy
+
+**Endpoint:** `/api/cola`
+
+**Backend Target:** `${BACKEND_URL}/api/cola`
+
+**Purpose:** Fetch current queue length
+
+```javascript:app/api/cola/route.js
+export async function GET() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  try {
+    const response = await fetch(`${backendUrl}/api/cola`);
+    if (!response.ok) {
+      return new Response(JSON.stringify({ cola: 1 }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    const data = await response.json();
+    return new Response(JSON.stringify({ cola: data.cola }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    // Fallback: return queue of 1 if backend is unavailable
+    return new Response(JSON.stringify({ cola: 1 }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+**Error Handling:** Returns default queue value of 1 if backend is unreachable.
+
+---
+
+### Status Proxy
+
+**Endpoint:** `/api/proxy/estado/[id]`
+
+**Backend Target:** `${BACKEND_URL}/api/estado/[id]`
+
+**Purpose:** Check compression job status
+
+```javascript:app/api/proxy/estado/[id]/route.js
+export async function GET(request, { params }) {
+  const unwrappedParams = await params;
+  const { id } = unwrappedParams;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    const response = await fetch(`${backendUrl}/api/estado/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return new Response(JSON.stringify({ error: 'Error al obtener el estado' }), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const data = await response.json();
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+**Response Format:**
+```json
+{
+  "estado": "listo",
+  "download_url": "https://storage.example.com/compressed-world.zip",
+  "fecha_expiracion": "2024-03-10T12:00:00Z",
+  "fecha_creacion": "2024-03-05T12:00:00Z",
+  "tamano_inicio": 1340.5,
+  "tamano_final": 715.2,
+  "cola": "2/10"
+}
+```
+
+---
+
+### Download Proxy
+
+**Endpoint:** `/api/proxy/descargar/[id]`
+
+**Backend Target:** Fetches from `download_url` in status response
+
+**Purpose:** Stream compressed world file to user
+
+```javascript:app/api/proxy/descargar/[id]/route.js
+export async function GET(request, { params }) {
+  const parametros = await params;
+  const { id } = parametros;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    // First, get the download URL from status endpoint
+    const response = await fetch(`${backendUrl}/api/estado/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return new Response(JSON.stringify({ error: 'Error al obtener el estado' }), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const data = await response.json();
+
+    if (!data.download_url) {
+      return new Response(JSON.stringify({ error: 'No se encontró download_url' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Fetch the actual file from storage
+    const fileResponse = await fetch(data.download_url);
+
+    if (!fileResponse.ok) {
+      return new Response(JSON.stringify({ error: 'Error al descargar el archivo' }), {
+        status: fileResponse.status,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Forward important headers
+    const headers = new Headers();
+    const contentType = fileResponse.headers.get('content-type');
+    const contentDisposition = fileResponse.headers.get('content-disposition');
+    if (contentType) headers.set('content-type', contentType);
+    if (contentDisposition) headers.set('content-disposition', contentDisposition);
+
+    // Stream file to client
+    return new Response(fileResponse.body, {
+      status: 200,
+      headers
+    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+**Key Features:**
+- Two-step process: fetch download URL, then stream file
+- Preserves content-type and content-disposition headers
+- Streams file directly without loading into memory
+
+---
+
+## Direct Backend Calls
+
+### Upload Endpoint
+
+The upload page makes direct calls to the backend (not proxied) to support chunked uploads.
+
+**File:** `app/[locale]/upload/page.js`
+
+```javascript
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setSubiendo(true);
+  
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const tamañoChunk = 50 * 1024 * 1024; // 50MB chunks
+  const chunksTotales = Math.ceil(fichero.size / tamañoChunk);
+  const idSubida = Date.now().toString() + Math.floor(Math.random() * 1000);
+
+  try {
+    for (let chunkIndex = 0; chunkIndex < chunksTotales; chunkIndex++) {
+      const start = chunkIndex * tamañoChunk;
+      const end = Math.min(start + tamañoChunk, fichero.size);
+      const chunk = fichero.slice(start, end);
+
+      const formData = new FormData();
+      formData.append('mundo_comprimido', chunk);
+      formData.append('fileName', fichero.name);
+      formData.append('uploadId', idSubida);
+      formData.append('chunkIndex', chunkIndex);
+      formData.append('totalChunks', chunksTotales);
+      formData.append('isLastChunk', chunkIndex === chunksTotales - 1 ? 'true' : 'false');
+
+      const response = await fetch(`${backendUrl}/api/subir`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      let resData = {};
+      try {
+        resData = await response.json();
+      } catch {}
+
+      if (!response.ok) {
+        throw new Error(resData.error || resData.message || `Error en subida (chunk ${chunkIndex + 1})`);
+      }
+
+      // Update progress
+      setProgresoSubida(Math.round(((chunkIndex + 1) / chunksTotales) * 100));
+
+      // Get server ID from last chunk response
+      if (chunkIndex === chunksTotales - 1 && (resData.servidor_id || resData.jobId)) {
+        setServerId(resData.servidor_id || resData.jobId);
+      }
+    }
+  } catch (e) {
+    setError(e.message);
+    setSubiendo(false);
+  }
+};
+```
+
+**Upload Parameters:**
+
+<ParamField path="mundo_comprimido" type="File" required>
+  The file chunk being uploaded
+</ParamField>
+
+<ParamField path="fileName" type="string" required>
+  Original filename (e.g., "world.zip")
+</ParamField>
+
+<ParamField path="uploadId" type="string" required>
+  Unique identifier for this upload session
+</ParamField>
+
+<ParamField path="chunkIndex" type="number" required>
+  Zero-based index of current chunk
+</ParamField>
+
+<ParamField path="totalChunks" type="number" required>
+  Total number of chunks in upload
+</ParamField>
+
+<ParamField path="isLastChunk" type="string" required>
+  "true" or "false" - indicates final chunk
+</ParamField>
+
+---
+
+## Error Handling
+
+### Client-Side Error Handling
+
+```javascript
+try {
+  const response = await fetch(`${backendUrl}/api/subir`, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  let resData = {};
+  try {
+    resData = await response.json();
+  } catch {}
+  
+  if (!response.ok) {
+    throw new Error(resData.error || resData.message || 'Upload failed');
+  }
+} catch (e) {
+  setError(e.message);
+  setSubiendo(false);
+}
+```
+
+### Proxy Error Handling
+
+All proxy routes return standardized error responses:
+
+```javascript
+catch (error) {
+  return new Response(JSON.stringify({ error: error.message }), {
+    status: 500,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+```
+
+---
+
+## Backend API Contract
+
+### Expected Backend Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|----------|
+| `/api/subir` | POST | Upload world chunks |
+| `/api/cola` | GET | Get queue length |
+| `/api/estado/[id]` | GET | Get job status |
+
+### Status Values
+
+The backend should return one of these `estado` values:
+
+- `pendiente` - Job is queued
+- `procesando` - Job is being processed
+- `listo` - Job is complete and ready for download
+- `expirado` - Download link has expired
+- `error_procesamiento` - Processing error
+- `error_procesamiento_no_encontrado` - Job not found
+- `error_conexion` - Connection error
+
+---
+
+## Configuration Checklist
+
+<Check>
+  Set `NEXT_PUBLIC_BACKEND_URL` environment variable
+</Check>
+
+<Check>
+  Ensure backend CORS allows frontend origin (if not using proxies)
+</Check>
+
+<Check>
+  Verify backend endpoints match expected contract
+</Check>
+
+<Check>
+  Test chunked upload with files larger than 50MB
+</Check>
+
+<Check>
+  Confirm download URLs are publicly accessible
+</Check>

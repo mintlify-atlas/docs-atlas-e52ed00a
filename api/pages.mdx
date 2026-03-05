@@ -1,0 +1,352 @@
+---
+title: 'Pages and Routes'
+description: 'Documentation of all Next.js pages and API routes in the MC World Compressor frontend'
+---
+
+## Overview
+
+The application uses Next.js 13+ App Router with internationalization support. All pages are organized under the `[locale]` dynamic segment for multi-language support.
+
+## Page Routes
+
+### Home Page
+
+**Route:** `/[locale]/`
+
+**File:** `app/[locale]/page.js`
+
+**Purpose:** Landing page with compression information, before/after examples, FAQ section, and call-to-action.
+
+**Component:** `Inicio`
+
+**Features:**
+- Hero section with compression statistics
+- How compression works explanation
+- Before/after compression examples
+- FAQ accordion
+- Call-to-action buttons
+
+**Example:**
+```javascript
+export default async function Inicio({ params }) {
+  const { locale } = await params;
+  const t = getPageTranslations(locale, 'home');
+  
+  return (
+    <div className="bg-white dark:bg-gray-900">
+      {/* Hero section */}
+      <h1>{t.title}</h1>
+      <Link href={`/${locale}/upload`}>
+        {t.compressButton}
+      </Link>
+    </div>
+  );
+}
+```
+
+---
+
+### Upload Page
+
+**Route:** `/[locale]/upload`
+
+**File:** `app/[locale]/upload/page.js`
+
+**Purpose:** World file upload interface with drag-and-drop support and chunked upload.
+
+**Component:** `HomePage` (client component)
+
+**Features:**
+- File drag-and-drop area
+- File type validation (.zip, .tar, .tar.gz)
+- File size limit (4GB max)
+- Chunked upload (50MB chunks)
+- Upload progress tracking
+- Queue status display
+- Redirect to status page on success
+
+**Key State:**
+```javascript
+const [fichero, setFichero] = useState(null);
+const [subiendo, setSubiendo] = useState(false);
+const [progresoSubida, setProgresoSubida] = useState(0);
+const [serverId, setServerId] = useState(null);
+const [cola, setCola] = useState(null);
+```
+
+**Upload Logic:**
+```javascript
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const tamañoChunk = 50 * 1024 * 1024; // 50MB
+  const chunksTotales = Math.ceil(fichero.size / tamañoChunk);
+  
+  for (let chunkIndex = 0; chunkIndex < chunksTotales; chunkIndex++) {
+    const chunk = fichero.slice(start, end);
+    const formData = new FormData();
+    formData.append('mundo_comprimido', chunk);
+    formData.append('fileName', fichero.name);
+    formData.append('uploadId', idSubida);
+    formData.append('chunkIndex', chunkIndex);
+    formData.append('totalChunks', chunksTotales);
+    
+    const response = await fetch(`${backendUrl}/api/subir`, {
+      method: 'POST',
+      body: formData,
+    });
+  }
+};
+```
+
+---
+
+### Status Page
+
+**Route:** `/[locale]/status/[id]`
+
+**File:** `app/[locale]/status/[id]/page.js`
+
+**Purpose:** Real-time compression status tracking with queue position.
+
+**Component:** `StatusPage` (client component)
+
+**Features:**
+- Real-time status polling (every 5 seconds)
+- Queue position tracking
+- Progress indicators
+- Error handling with user-friendly messages
+- Auto-redirect to download page when ready
+- Contact information for support
+
+**Status States:**
+- `pendiente` - In queue waiting
+- `procesando` - Currently being processed
+- `listo` - Ready for download
+- `expirado` - Link expired
+- `error_*` - Various error states
+
+**Polling Logic:**
+```javascript
+useEffect(() => {
+  const fetchEstado = async () => {
+    const res = await fetch(`/api/proxy/estado/${id}`);
+    const data = await res.json();
+    setEstado(data.estado);
+    
+    if (data.estado === 'listo') {
+      setTimeout(() => {
+        router.push(`/${locale}/download/${id}`);
+      }, 3000);
+    }
+  };
+  
+  fetchEstado();
+  const interval = setInterval(fetchEstado, 5000);
+  return () => clearInterval(interval);
+}, [parametros, router]);
+```
+
+---
+
+### Download Page
+
+**Route:** `/[locale]/download/[id]`
+
+**File:** `app/[locale]/download/[id]/page.js`
+
+**Purpose:** Download compressed world with compression statistics.
+
+**Component:** `DownloadPage` (client component)
+
+**Features:**
+- Download link generation
+- Compression statistics display
+- File size comparison
+- Expiration date countdown
+- File structure preview
+
+**Data Fetched:**
+```javascript
+const [linkDescarga, setLinkDescarga] = useState(null);
+const [fechaExpiracion, setFechaExpiracion] = useState(null);
+const [fechaCreacion, setFechaCreacion] = useState(null);
+const [tamanoInicio, setTamanoInicio] = useState(null);
+const [tamanoFinal, setTamanoFinal] = useState(null);
+const [nombreMundo, setNombreMundo] = useState(null);
+```
+
+**Compression Ratio Calculation:**
+```javascript
+const porcentajeCompresion = tamanoInicio && tamanoFinal
+  ? Math.round(100 - ((tamanoFinal / tamanoInicio) * 100))
+  : 0;
+```
+
+---
+
+## API Routes
+
+### Queue Status API
+
+**Route:** `GET /api/cola`
+
+**File:** `app/api/cola/route.js`
+
+**Purpose:** Fetch current queue length from backend.
+
+**Response:**
+```json
+{
+  "cola": 5
+}
+```
+
+**Implementation:**
+```javascript
+export async function GET() {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  try {
+    const response = await fetch(`${backendUrl}/api/cola`);
+    const data = await response.json();
+    return new Response(JSON.stringify({ cola: data.cola }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ cola: 1 }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+---
+
+### Status Proxy API
+
+**Route:** `GET /api/proxy/estado/[id]`
+
+**File:** `app/api/proxy/estado/[id]/route.js`
+
+**Purpose:** Proxy status requests to backend API.
+
+**Parameters:**
+- `id` - Job/server ID for the compression task
+
+**Response:**
+```json
+{
+  "estado": "listo",
+  "download_url": "https://...",
+  "fecha_expiracion": "2024-03-10T12:00:00Z",
+  "fecha_creacion": "2024-03-05T12:00:00Z",
+  "tamano_inicio": 1340,
+  "tamano_final": 715,
+  "cola": "2/10"
+}
+```
+
+**Implementation:**
+```javascript
+export async function GET(request, { params }) {
+  const unwrappedParams = await params;
+  const { id } = unwrappedParams;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    const response = await fetch(`${backendUrl}/api/estado/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+---
+
+### Download Proxy API
+
+**Route:** `GET /api/proxy/descargar/[id]`
+
+**File:** `app/api/proxy/descargar/[id]/route.js`
+
+**Purpose:** Proxy file downloads from backend storage.
+
+**Parameters:**
+- `id` - Job/server ID for the compression task
+
+**Implementation:**
+```javascript
+export async function GET(request, { params }) {
+  const parametros = await params;
+  const { id } = parametros;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    // Get download URL from status endpoint
+    const response = await fetch(`${backendUrl}/api/estado/${id}`);
+    const data = await response.json();
+
+    // Fetch the actual file
+    const fileResponse = await fetch(data.download_url);
+
+    // Forward headers
+    const headers = new Headers();
+    const contentType = fileResponse.headers.get('content-type');
+    const contentDisposition = fileResponse.headers.get('content-disposition');
+    if (contentType) headers.set('content-type', contentType);
+    if (contentDisposition) headers.set('content-disposition', contentDisposition);
+
+    return new Response(fileResponse.body, {
+      status: 200,
+      headers
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+```
+
+---
+
+## Route Structure
+
+```
+app/
+├── [locale]/               # Internationalized pages
+│   ├── page.js            # Home page
+│   ├── upload/
+│   │   └── page.js        # Upload interface
+│   ├── status/
+│   │   └── [id]/
+│   │       └── page.js    # Status tracking
+│   └── download/
+│       └── [id]/
+│           └── page.js    # Download page
+└── api/                    # API routes
+    ├── cola/
+    │   └── route.js       # Queue status
+    └── proxy/
+        ├── estado/
+        │   └── [id]/
+        │       └── route.js  # Status proxy
+        └── descargar/
+            └── [id]/
+                └── route.js  # Download proxy
+```

@@ -1,0 +1,110 @@
+---
+title: Compression
+description: How MC World Compressor reduces Minecraft world sizes by up to 75%
+---
+
+## Overview
+
+MC World Compressor uses intelligent analysis to reduce Minecraft world sizes by removing unused chunks while preserving explored areas and builds. This is achieved through integration with the **thanos** library, which performs advanced world optimization beyond simple ZIP compression.
+
+## How It Works
+
+The compression process goes beyond traditional file compression by analyzing your Minecraft world structure:
+
+<Steps>
+  <Step title="Analyze">
+    The system reads your world's `level.dat` files and region data to identify which chunks have been explored and which contain player-made structures.
+  </Step>
+  
+  <Step title="Optimize">
+    Unused chunks are removed from the world. These are areas that were generated but never visited or modified by players.
+  </Step>
+  
+  <Step title="Ready">
+    Your optimized world is compressed and ready for download, typically 50% smaller or more.
+  </Step>
+</Steps>
+
+## What Gets Removed
+
+- **Unused chunks**: Terrain that was generated but never explored
+- **Redundant data**: Duplicate or unnecessary region files
+- **Empty dimensions**: Unvisited Nether or End dimensions with no player activity
+
+## What Gets Preserved
+
+<Check>All explored areas remain intact</Check>
+<Check>Player builds and structures are preserved</Check>
+<Check>Entities, inventories, and game data are kept</Check>
+<Check>Dimension data for visited areas (Overworld, Nether, End)</Check>
+
+## Real-World Results
+
+Based on actual usage data displayed on the home page (see `app/[locale]/page.js:150-278`), here are typical compression results:
+
+<CardGroup cols={3}>
+  <Card title="Small World" icon="cube">
+    **Before**: 24MB  
+    **After**: 6MB  
+    **Reduction**: 75%
+  </Card>
+  
+  <Card title="Medium World" icon="cubes">
+    **Before**: 94MB  
+    **After**: 29MB  
+    **Reduction**: 69%
+  </Card>
+  
+  <Card title="Large World" icon="layer-group">
+    **Before**: 1340MB  
+    **After**: 715MB  
+    **Reduction**: 47%
+  </Card>
+</CardGroup>
+
+<Note>
+  Compression ratios vary based on how much of your world has been explored. Worlds with large unexplored areas see the highest reduction rates.
+</Note>
+
+## The Thanos Library
+
+The compression is powered by the **thanos** library, which specializes in Minecraft world optimization. Unlike simple ZIP compression, thanos:
+
+- Understands Minecraft's region file format (`.mca` files)
+- Identifies player-modified chunks vs. generated terrain
+- Safely removes chunks without corrupting world data
+- Maintains compatibility with all Minecraft versions
+
+## Technical Details
+
+The compression process analyzes your world structure, which typically includes:
+
+```text
+world/
+├── level.dat          # World metadata
+├── level.dat_old      # Backup metadata
+├── data/              # Game data (advancements, stats)
+├── region/            # Overworld chunks
+│   ├── r.0.0.mca
+│   └── r.0.1.mca
+├── DIM1/              # The End dimension
+└── DIM-1/             # The Nether dimension
+```
+
+Each `.mca` (region) file contains 32x32 chunks. The thanos library analyzes these files to determine which chunks can be safely removed.
+
+## Performance Impact
+
+<Info>
+  The average compression reduces world size by **50%**, making worlds faster to:
+  - Upload to servers
+  - Share with friends
+  - Back up regularly
+  - Store in cloud services
+</Info>
+
+## Source Implementation
+
+The compression explanation is rendered on the home page through the "How It Works" section, which shows users the three-step process with visual icons.
+
+Reference: `app/[locale]/page.js:82-144`

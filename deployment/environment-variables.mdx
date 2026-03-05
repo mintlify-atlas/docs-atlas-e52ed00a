@@ -1,0 +1,217 @@
+---
+title: 'Environment Variables'
+description: 'Configure environment variables for the MC World Compressor Frontend'
+---
+
+## Overview
+
+Environment variables configure the application's behavior in different environments. The MC World Compressor Frontend uses environment variables to connect to the backend API and configure deployment settings.
+
+## Setup
+
+### Development Environment
+
+Create a `.env` file in the project root by copying the example file:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` to set your local backend URL.
+
+### Production Environment
+
+For production deployments:
+
+- **Vercel**: Set environment variables in the Vercel dashboard under Project Settings → Environment Variables
+- **Docker**: Pass variables using `-e` flags or `docker-compose.yml`
+- **Traditional Hosting**: Set variables in your server's environment or use a `.env.production` file
+
+## Required Variables
+
+<ParamField path="NEXT_PUBLIC_BACKEND_URL" type="string" required>
+  The URL of the MC World Compressor backend API.
+  
+  **Example Development:**
+  ```bash
+  NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+  ```
+  
+  **Example Production:**
+  ```bash
+  NEXT_PUBLIC_BACKEND_URL=https://api.mcworldcompressor.com
+  ```
+  
+  <Warning>
+  If your frontend is served over HTTPS (e.g., on Vercel), this **must** be an HTTPS URL. Browsers block HTTP requests from HTTPS sites due to mixed content security policies.
+  </Warning>
+  
+  **Important Notes:**
+  - The `NEXT_PUBLIC_` prefix makes this variable accessible in the browser
+  - Without this variable, the application cannot communicate with the backend
+  - Must be a valid URL without trailing slash
+  - Must be accessible from the user's browser (public URL, not internal)
+</ParamField>
+
+## Optional Variables
+
+<ParamField path="NEXT_PUBLIC_SITE_URL" type="string">
+  The canonical URL of your deployed frontend application. Used for sitemap generation.
+  
+  **Default:**
+  ```bash
+  NEXT_PUBLIC_SITE_URL=https://mcworldcompressor.vercel.app
+  ```
+  
+  **Example Custom Domain:**
+  ```bash
+  NEXT_PUBLIC_SITE_URL=https://www.mcworldcompressor.com
+  ```
+  
+  This variable is used by `next-sitemap` to generate correct URLs in:
+  - `sitemap.xml`
+  - `robots.txt`
+  
+  Set this to your production domain for proper SEO.
+</ParamField>
+
+<ParamField path="PORT" type="number">
+  The port the production server listens on.
+  
+  **Default:** `3000`
+  
+  **Example:**
+  ```bash
+  PORT=8080
+  ```
+  
+  Only relevant when running the production server with `npm start` or in containerized environments.
+</ParamField>
+
+## Environment-Specific Configuration
+
+### Development vs Production
+
+| Variable | Development | Production |
+|----------|-------------|------------|
+| `NEXT_PUBLIC_BACKEND_URL` | `http://localhost:8080` | `https://api.example.com` |
+| `NEXT_PUBLIC_SITE_URL` | Not needed | Your production domain |
+| `PORT` | 3000 (default) | Platform-specific |
+
+### HTTPS Requirements
+
+<Warning>
+**Critical:** When your frontend uses HTTPS, your backend **must also use HTTPS**.
+
+Browsers enforce mixed content policies that block insecure HTTP requests from secure HTTPS pages. This means:
+
+- Frontend on `https://example.com` → Backend **must** be on `https://api.example.com`
+- Frontend on `http://localhost:3000` → Backend can be on `http://localhost:8080`
+
+See [HTTPS Requirements](/deployment/https-requirements) for detailed information.
+</Warning>
+
+## Security Best Practices
+
+### Public vs Private Variables
+
+**Public Variables** (prefixed with `NEXT_PUBLIC_`):
+- Accessible in browser JavaScript
+- Embedded in the client-side bundle
+- Visible to end users
+- Use for API URLs, public configuration
+
+**Private Variables** (no prefix):
+- Only available on the server
+- NOT accessible in browser
+- Use for API keys, secrets, database URLs
+
+<Warning>
+Never put sensitive credentials in `NEXT_PUBLIC_` variables. They will be visible in the browser!
+</Warning>
+
+### Validation
+
+The application should validate environment variables at startup. Check for:
+
+- Required variables are set
+- URLs are properly formatted
+- HTTPS is used when required
+
+## Verification
+
+After setting environment variables, verify they're working:
+
+### During Development
+
+1. Start the dev server: `npm run dev`
+2. Open browser console
+3. Check that API requests go to the correct backend URL
+4. Test file upload functionality
+
+### In Production
+
+1. Build the application: `npm run build`
+2. Check build output for any warnings about missing variables
+3. Start production server: `npm start`
+4. Test API connectivity
+5. Verify sitemap.xml has correct domain
+
+## Troubleshooting
+
+### Variable Not Found
+
+**Symptom:** Application shows undefined or default values
+
+**Solutions:**
+- Restart the dev server after changing `.env` files
+- Rebuild the application for production: `npm run build`
+- Check variable names match exactly (case-sensitive)
+- Ensure `NEXT_PUBLIC_` prefix for client-side variables
+
+### Mixed Content Errors
+
+**Symptom:** "Mixed Content" errors in browser console
+
+**Solutions:**
+- Change `NEXT_PUBLIC_BACKEND_URL` to use HTTPS
+- Deploy backend with HTTPS enabled
+- See [HTTPS Requirements](/deployment/https-requirements)
+
+### Sitemap Has Wrong Domain
+
+**Symptom:** `sitemap.xml` shows incorrect URLs
+
+**Solutions:**
+- Set `NEXT_PUBLIC_SITE_URL` to your production domain
+- Rebuild: `npm run build`
+- Verify `public/sitemap.xml` has correct URLs
+
+## Example Configurations
+
+### Local Development
+
+```bash .env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+```
+
+### Production (Vercel)
+
+```bash
+NEXT_PUBLIC_BACKEND_URL=https://api.mcworldcompressor.com
+NEXT_PUBLIC_SITE_URL=https://mcworldcompressor.com
+```
+
+### Docker Deployment
+
+```yaml docker-compose.yml
+services:
+  frontend:
+    build: .
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=https://api.mcworldcompressor.com
+      - NEXT_PUBLIC_SITE_URL=https://mcworldcompressor.com
+      - PORT=3000
+    ports:
+      - "3000:3000"
+```

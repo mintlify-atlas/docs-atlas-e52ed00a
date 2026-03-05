@@ -1,0 +1,338 @@
+---
+title: 'i18n Configuration'
+description: 'Internationalization setup and configuration'
+---
+
+## Overview
+
+The application uses a custom i18n implementation for multi-language support. The configuration is centralized in `lib/i18n.js` and supports dynamic locale routing.
+
+## Configuration File
+
+**Location:** `lib/i18n.js`
+
+```javascript:lib/i18n.js
+export const i18n = {
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'hi', 'ar'],
+};
+
+export const Locale = {
+  ES: 'es',
+  EN: 'en',
+  HI: 'hi',
+  AR: 'ar',
+};
+```
+
+---
+
+## Configuration Options
+
+### `i18n.defaultLocale`
+
+**Type:** `string`
+
+**Default:** `'en'`
+
+**Description:** The fallback locale used when no locale is specified or when a translation is missing.
+
+```javascript
+i18n.defaultLocale // 'en'
+```
+
+<Info>
+  All translation keys fall back to English if not found in the requested locale.
+</Info>
+
+---
+
+### `i18n.locales`
+
+**Type:** `string[]`
+
+**Default:** `['en', 'es', 'hi', 'ar']`
+
+**Description:** Array of supported locale codes.
+
+```javascript
+i18n.locales // ['en', 'es', 'hi', 'ar']
+```
+
+**Supported Languages:**
+
+| Code | Language | Native Name |
+|------|----------|-------------|
+| `en` | English | English |
+| `es` | Spanish | Español |
+| `hi` | Hindi | हिन्दी |
+| `ar` | Arabic | العربية |
+
+---
+
+## Locale Constants
+
+The `Locale` object provides type-safe constants for locale codes:
+
+```javascript
+export const Locale = {
+  ES: 'es',
+  EN: 'en',
+  HI: 'hi',
+  AR: 'ar',
+};
+```
+
+**Usage:**
+
+```javascript
+import { Locale } from '@/lib/i18n';
+
+const currentLocale = Locale.EN; // 'en'
+
+if (locale === Locale.ES) {
+  // Spanish-specific logic
+}
+```
+
+---
+
+## Locale Routing
+
+All pages are organized under the `[locale]` dynamic segment:
+
+```
+app/
+└── [locale]/
+    ├── page.js           # /en/, /es/, /hi/, /ar/
+    ├── upload/
+    │   └── page.js       # /en/upload, /es/upload, etc.
+    ├── status/
+    │   └── [id]/
+    │       └── page.js   # /en/status/123, /es/status/123, etc.
+    └── download/
+        └── [id]/
+            └── page.js   # /en/download/123, /es/download/123, etc.
+```
+
+### Accessing Locale in Pages
+
+**Server Components:**
+
+```javascript
+export default async function Page({ params }) {
+  const { locale } = await params;
+  const t = getPageTranslations(locale, 'home');
+  
+  return <div>{t.title}</div>;
+}
+```
+
+**Client Components:**
+
+```javascript
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useTranslations } from '@/lib/translations';
+
+export default function Page({ params }) {
+  const [locale, setLocale] = useState(null);
+  const { t } = useTranslations(locale || 'en');
+  
+  useEffect(() => {
+    const getLocale = async () => {
+      const resolvedParams = await params;
+      setLocale(resolvedParams.locale);
+    };
+    getLocale();
+  }, [params]);
+  
+  return <div>{t('upload.title')}</div>;
+}
+```
+
+---
+
+## Locale-Aware Links
+
+Always include the locale in navigation links:
+
+```javascript
+import Link from 'next/link';
+
+// ✅ Correct - includes locale
+<Link href={`/${locale}/upload`}>
+  {t.compressButton}
+</Link>
+
+// ❌ Incorrect - missing locale
+<Link href="/upload">
+  Upload
+</Link>
+```
+
+---
+
+## Middleware (Optional)
+
+While not currently implemented, you can add middleware to handle locale detection and redirects:
+
+```javascript:middleware.js
+import { NextResponse } from 'next/server';
+import { i18n } from './lib/i18n';
+
+export function middleware(request) {
+  const pathname = request.nextUrl.pathname;
+  
+  // Check if pathname is missing locale
+  const pathnameIsMissingLocale = i18n.locales.every(
+    (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
+  );
+  
+  // Redirect to default locale if missing
+  if (pathnameIsMissingLocale) {
+    return NextResponse.redirect(
+      new URL(`/${i18n.defaultLocale}${pathname}`, request.url)
+    );
+  }
+}
+
+export const config = {
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+};
+```
+
+---
+
+## Translation Files Location
+
+Translation files are stored in the `locales/` directory:
+
+```
+locales/
+├── en.json    # English translations
+├── es.json    # Spanish translations
+├── hi.json    # Hindi translations
+└── ar.json    # Arabic translations
+```
+
+Each file contains nested translation keys organized by page:
+
+```json:locales/en.json
+{
+  "home": {
+    "title": "MC World Compressor",
+    "subtitle": "Reduce your Minecraft world size by up to",
+    "description": "Fast, free, and easy to use"
+  },
+  "upload": {
+    "title": "Upload Your World",
+    "dragDrop": "Drag and drop your world file here"
+  }
+}
+```
+
+---
+
+## Adding a New Locale
+
+### Step 1: Update Configuration
+
+Add the new locale to `lib/i18n.js`:
+
+```javascript
+export const i18n = {
+  defaultLocale: 'en',
+  locales: ['en', 'es', 'hi', 'ar', 'fr'], // Added 'fr'
+};
+
+export const Locale = {
+  ES: 'es',
+  EN: 'en',
+  HI: 'hi',
+  AR: 'ar',
+  FR: 'fr', // Added French
+};
+```
+
+### Step 2: Create Translation File
+
+Create `locales/fr.json` with all translation keys:
+
+```json:locales/fr.json
+{
+  "home": {
+    "title": "Compresseur de Monde MC",
+    "subtitle": "Réduisez la taille de votre monde Minecraft jusqu'à",
+    "description": "Rapide, gratuit et facile à utiliser"
+  },
+  "upload": {
+    "title": "Téléchargez Votre Monde"
+  }
+}
+```
+
+### Step 3: Import in Translations
+
+Update `lib/translations.js`:
+
+```javascript
+import es from '../locales/es.json';
+import en from '../locales/en.json';
+import hi from '../locales/hi.json';
+import ar from '../locales/ar.json';
+import fr from '../locales/fr.json'; // Add import
+
+const translations = { en, es, hi, ar, fr }; // Add to object
+```
+
+### Step 4: Test Routes
+
+Verify the new locale works:
+- `/fr/` - Home page
+- `/fr/upload` - Upload page
+- `/fr/status/123` - Status page
+
+---
+
+## RTL Support
+
+The application includes basic RTL (Right-to-Left) support for Arabic:
+
+```javascript
+// In your layout or page
+const isRTL = locale === 'ar';
+
+<html dir={isRTL ? 'rtl' : 'ltr'} lang={locale}>
+  {/* ... */}
+</html>
+```
+
+---
+
+## Best Practices
+
+<Check>
+  Always provide English (en) translations as fallback
+</Check>
+
+<Check>
+  Keep translation keys organized by page/feature
+</Check>
+
+<Check>
+  Use consistent key naming (camelCase)
+</Check>
+
+<Check>
+  Test all locales before deploying
+</Check>
+
+<Check>
+  Include locale in all internal links
+</Check>
+
+<Warning>
+  Don't hardcode text strings in components - always use translation functions
+</Warning>

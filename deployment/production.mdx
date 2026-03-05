@@ -1,0 +1,149 @@
+---
+title: 'Production Deployment'
+description: 'Deploy the MC World Compressor Frontend to production environments'
+---
+
+## Overview
+
+The MC World Compressor Frontend is a Next.js application that can be deployed to various production environments. This guide covers the build process, production server setup, and deployment best practices.
+
+## Build Process
+
+To build the application for production, run the build command:
+
+```bash
+npm run build
+```
+
+This command:
+1. Compiles the Next.js application
+2. Optimizes assets and bundles
+3. Generates static pages where possible
+4. Prepares the application for production deployment
+
+### Post-Build Tasks
+
+After the build completes, a `postbuild` script automatically runs to generate the sitemap:
+
+```bash
+npm run postbuild
+# Runs: next-sitemap
+```
+
+The sitemap generation is configured in `next-sitemap.config.js` and includes:
+- Multi-language routes (EN, ES, HI, AR)
+- Dynamic routes for upload, download, and status pages
+- Automatic `robots.txt` generation
+- Site URL from `NEXT_PUBLIC_SITE_URL` environment variable (defaults to `https://mcworldcompressor.vercel.app`)
+
+## Production Server
+
+After building, start the production server:
+
+```bash
+npm start
+```
+
+This runs the Next.js production server, which:
+- Serves the optimized application
+- Handles server-side rendering (SSR)
+- Manages API routes
+- Serves static assets efficiently
+
+<Note>
+The production server runs on port 3000 by default. You can change this by setting the `PORT` environment variable.
+</Note>
+
+## Deployment Platforms
+
+### Vercel (Recommended)
+
+The application is optimized for deployment on Vercel, the platform built by the creators of Next.js.
+
+**Advantages:**
+- Zero-configuration deployment
+- Automatic HTTPS
+- Edge network for global performance
+- Automatic preview deployments for pull requests
+- Built-in analytics and monitoring
+
+**Deployment Steps:**
+
+1. Push your code to a Git repository (GitHub, GitLab, Bitbucket)
+2. Import the project in Vercel
+3. Configure environment variables (see [Environment Variables](/deployment/environment-variables))
+4. Deploy
+
+<Warning>
+When deploying to Vercel or any HTTPS environment, your backend **must** also be accessible via HTTPS. See [HTTPS Requirements](/deployment/https-requirements) for details.
+</Warning>
+
+### Other Platforms
+
+The application can also be deployed to:
+
+- **Docker**: Create a Dockerfile with Node.js, install dependencies, build, and run `npm start`
+- **Traditional Hosting**: Any Node.js hosting provider (DigitalOcean, AWS, etc.)
+- **Serverless**: AWS Lambda, Google Cloud Functions (with Next.js serverless adapter)
+
+## Production Checklist
+
+Before deploying to production:
+
+- [ ] Set `NEXT_PUBLIC_BACKEND_URL` to your production backend URL
+- [ ] Ensure backend is accessible via HTTPS if frontend uses HTTPS
+- [ ] Set `NEXT_PUBLIC_SITE_URL` for correct sitemap generation
+- [ ] Test the build locally with `npm run build && npm start`
+- [ ] Verify all environment variables are configured
+- [ ] Test file upload functionality (up to 4GB)
+- [ ] Verify multi-language support works correctly
+- [ ] Check robots.txt and sitemap.xml generation
+
+## Build Output
+
+The build process creates:
+
+- `.next/` - Compiled application and optimized assets
+- `public/sitemap.xml` - Generated sitemap (after postbuild)
+- `public/robots.txt` - Generated robots.txt (after postbuild)
+
+<Note>
+The `.next` directory should not be committed to version control. It's generated during the build process.
+</Note>
+
+## Performance Optimization
+
+The Next.js build automatically includes:
+
+- **Code splitting**: Loads only necessary JavaScript for each page
+- **Image optimization**: Automatic image optimization with Next.js Image component
+- **Bundle analysis**: Use `npm run build` to see bundle sizes
+- **Static generation**: Pre-renders pages where possible for faster loading
+
+## Monitoring
+
+After deployment, monitor:
+
+- Application logs for errors
+- Response times and performance metrics
+- Upload success rates
+- Backend connectivity (CORS, HTTPS issues)
+- Memory and CPU usage
+
+## Troubleshooting
+
+### Build Failures
+
+If the build fails:
+
+1. Check for TypeScript or ESLint errors: `npm run lint`
+2. Ensure all dependencies are installed: `npm install`
+3. Verify Node.js version compatibility (Next.js 16+ requires Node.js 18.17+)
+4. Clear cache: `rm -rf .next` and rebuild
+
+### Production Runtime Issues
+
+- **Mixed Content Errors**: See [HTTPS Requirements](/deployment/https-requirements)
+- **Backend Connection Failed**: Verify `NEXT_PUBLIC_BACKEND_URL` is correct and accessible
+- **404 Errors**: Ensure all routes are properly configured and built
+- **Performance Issues**: Check bundle sizes and enable caching headers

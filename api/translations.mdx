@@ -1,0 +1,549 @@
+---
+title: 'Translation Functions'
+description: 'API reference for translation utilities and hooks'
+---
+
+## Overview
+
+The translation system provides functions and hooks for accessing localized strings in both server and client components.
+
+**Location:** `lib/translations.js`
+
+---
+
+## Translation Functions
+
+### `getPageTranslations(locale, page)`
+
+Retrieve all translations for a specific page.
+
+**Type:** Server & Client Function
+
+**Signature:**
+```typescript
+function getPageTranslations(
+  locale: string,
+  pageName: string
+): Record<string, any>
+```
+
+**Parameters:**
+
+<ParamField path="locale" type="string" required>
+  The locale code (e.g., 'en', 'es', 'hi', 'ar')
+</ParamField>
+
+<ParamField path="pageName" type="string" required>
+  The page key from translation files (e.g., 'home', 'upload', 'status', 'download')
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="translations" type="object">
+  Object containing all translation strings for the specified page
+</ResponseField>
+
+**Implementation:**
+
+```javascript:lib/translations.js
+export function getPageTranslations(locale, pageName) {
+  return translations[locale]?.[pageName] || translations.en?.[pageName] || {};
+}
+```
+
+**Usage Example (Server Component):**
+
+```javascript:app/[locale]/page.js
+import { getPageTranslations } from '@/lib/translations';
+
+export default async function Inicio({ params }) {
+  const { locale } = await params;
+  const t = getPageTranslations(locale, 'home');
+
+  return (
+    <div>
+      <h1>{t.title}</h1>
+      <p>{t.subtitle}</p>
+      <p>{t.description}</p>
+      <Link href={`/${locale}/upload`}>
+        {t.compressButton}
+      </Link>
+    </div>
+  );
+}
+```
+
+**Translation File Structure:**
+
+```json:locales/en.json
+{
+  "home": {
+    "title": "MC World Compressor",
+    "subtitle": "Reduce your Minecraft world size by up to",
+    "description": "Fast, free, and easy to use",
+    "compressButton": "Compress Your World"
+  }
+}
+```
+
+**Accessing Nested Properties:**
+
+```javascript
+const t = getPageTranslations('en', 'home');
+
+console.log(t.title);           // "MC World Compressor"
+console.log(t.compression.moreThanZip); // Nested access
+```
+
+---
+
+### `useTranslations(locale)`
+
+React hook for accessing translations with variable interpolation support.
+
+**Type:** Client-Side Hook
+
+**Signature:**
+```typescript
+function useTranslations(locale: string): {
+  t: (key: string, vars?: object | string) => string
+}
+```
+
+**Parameters:**
+
+<ParamField path="locale" type="string" default="en">
+  The locale code for translations
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="t" type="function">
+  Translation function that accepts a key and optional variables
+</ResponseField>
+
+**Implementation:**
+
+```javascript:lib/translations.js
+export function useTranslations(locale = "en") {
+  const t = (key, varsOrDefault = key) => {
+    let translation = getNestedTranslation(translations[locale], key) 
+      || getNestedTranslation(translations.en, key) 
+      || key;
+    
+    // Handle variable interpolation
+    if (typeof varsOrDefault === 'object' && varsOrDefault !== null) {
+      Object.entries(varsOrDefault).forEach(([k, v]) => {
+        translation = translation.replace(
+          new RegExp(`{{\\s*${k}\\s*}}`, "g"),
+          v
+        );
+      });
+    }
+    return translation;
+  };
+  return { t };
+}
+```
+
+**Usage Example (Client Component):**
+
+```javascript:app/[locale]/upload/page.js
+'use client';
+
+import { useTranslations } from '@/lib/translations';
+
+export default function UploadPage({ params }) {
+  const [locale, setLocale] = useState('en');
+  const { t } = useTranslations(locale);
+
+  return (
+    <div>
+      <h1>{t('upload.title')}</h1>
+      <p>{t('upload.dragDrop')}</p>
+      <button>{t('upload.upload')}</button>
+    </div>
+  );
+}
+```
+
+**Variable Interpolation:**
+
+```javascript
+const { t } = useTranslations('en');
+
+// Translation with variables
+t('status.queuePositionTotal', { posicion: 5, total: 10 })
+// Output: "Position 5 of 10 in queue"
+
+// Translation file:
+{
+  "status": {
+    "queuePositionTotal": "Position {{ posicion }} of {{ total }} in queue"
+  }
+}
+```
+
+**Fallback Behavior:**
+
+```javascript
+const { t } = useTranslations('es');
+
+// 1. First tries Spanish translation
+// 2. Falls back to English if not found
+// 3. Returns key itself if neither exists
+
+t('missing.key') // Returns: "missing.key"
+```
+
+---
+
+### `getTranslation(locale, key, defaultValue)`
+
+Direct translation lookup with default value support.
+
+**Type:** Server & Client Function
+
+**Signature:**
+```typescript
+function getTranslation(
+  locale: string,
+  key: string,
+  defaultValue?: string
+): string
+```
+
+**Parameters:**
+
+<ParamField path="locale" type="string" required>
+  The locale code
+</ParamField>
+
+<ParamField path="key" type="string" required>
+  Dot-notated translation key (e.g., 'upload.title')
+</ParamField>
+
+<ParamField path="defaultValue" type="string" default="key">
+  Fallback value if translation not found
+</ParamField>
+
+**Returns:**
+
+<ResponseField name="translation" type="string">
+  The translated string or default value
+</ResponseField>
+
+**Implementation:**
+
+```javascript:lib/translations.js
+export function getTranslation(locale, key, defaultValue = key) {
+  const translation = getNestedTranslation(translations[locale], key);
+  return translation || getNestedTranslation(translations.en, key) || defaultValue;
+}
+```
+
+**Usage Example:**
+
+```javascript
+import { getTranslation } from '@/lib/translations';
+
+const title = getTranslation('es', 'upload.title', 'Upload');
+console.log(title); // "Sube Tu Mundo" or "Upload" if not found
+```
+
+---
+
+## Helper Functions
+
+### `getNestedTranslation(obj, path)`
+
+Internal helper for accessing nested object properties via dot notation.
+
+**Signature:**
+```typescript
+function getNestedTranslation(obj: object, path: string): any
+```
+
+**Implementation:**
+
+```javascript:lib/translations.js
+function getNestedTranslation(obj, path) {
+  return path.split(".").reduce((current, key) => current?.[key], obj);
+}
+```
+
+**Example:**
+
+```javascript
+const obj = {
+  upload: {
+    errors: {
+      sizeLimit: "File too large"
+    }
+  }
+};
+
+getNestedTranslation(obj, 'upload.errors.sizeLimit');
+// Returns: "File too large"
+```
+
+---
+
+## Translation File Structure
+
+### Import and Export
+
+```javascript:lib/translations.js
+import es from '../locales/es.json';
+import en from '../locales/en.json';
+import hi from '../locales/hi.json';
+import ar from "../locales/ar.json";
+
+const translations = { en, es, hi, ar };
+```
+
+### Nested Structure Example
+
+```json:locales/en.json
+{
+  "common": {
+    "error": "Error",
+    "goBack": "Go Back",
+    "otherFiles": "other files"
+  },
+  "home": {
+    "title": "MC World Compressor",
+    "subtitle": "Reduce your Minecraft world size by up to",
+    "compression": {
+      "moreThanZip": "More than just ZIP compression",
+      "steps": {
+        "analyze": "Analyze",
+        "optimize": "Optimize",
+        "ready": "Download"
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "free": {
+        "question": "Is it really free?",
+        "answer": "Yes, completely free!"
+      }
+    }
+  },
+  "upload": {
+    "title": "Upload Your World",
+    "dragDrop": "Drag and drop your world file here",
+    "errors": {
+      "zipOnly": "Only .zip, .tar, or .tar.gz files are allowed",
+      "sizeLimit": "File size must be less than 4GB"
+    }
+  },
+  "status": {
+    "title": "Compression Status",
+    "queue": "In Queue",
+    "processing": "Processing your world...",
+    "ready": "Compression Complete!",
+    "queuePositionTotal": "Position {{ posicion }} of {{ total }} in queue",
+    "errors": {
+      "connection": "Connection error. Please check your internet."
+    }
+  },
+  "download": {
+    "title": "Download Compressed World",
+    "compressionRatio": "Compressed by <b>{{ porcentaje }}%</b>!"
+  }
+}
+```
+
+---
+
+## Usage Patterns
+
+### Pattern 1: Server Component with Page Translations
+
+```javascript
+import { getPageTranslations } from '@/lib/translations';
+
+export default async function Page({ params }) {
+  const { locale } = await params;
+  const t = getPageTranslations(locale, 'home');
+  
+  return (
+    <div>
+      <h1>{t.title}</h1>
+      <p>{t.faq.free.question}</p>
+    </div>
+  );
+}
+```
+
+### Pattern 2: Client Component with Hook
+
+```javascript
+'use client';
+import { useTranslations } from '@/lib/translations';
+
+export default function Component({ params }) {
+  const [locale, setLocale] = useState('en');
+  const { t } = useTranslations(locale);
+  
+  return <h1>{t('upload.title')}</h1>;
+}
+```
+
+### Pattern 3: Dynamic Translations with Variables
+
+```javascript
+const { t } = useTranslations(locale);
+
+const message = t('download.compressionRatio', { porcentaje: 50 });
+// Returns: "Compressed by <b>50%</b>!"
+```
+
+### Pattern 4: Error Messages with Fallbacks
+
+```javascript
+const { t } = useTranslations(locale);
+
+const errorMsg = error 
+  ? t('upload.errors.sizeLimit') 
+  : null;
+
+if (file.size > MAX_SIZE) {
+  setError(t('upload.errors.sizeLimit'));
+}
+```
+
+---
+
+## Type Safety (Optional)
+
+For TypeScript projects, you can add type definitions:
+
+```typescript:types/translations.d.ts
+export type Locale = 'en' | 'es' | 'hi' | 'ar';
+
+export interface TranslationFunction {
+  (key: string): string;
+  (key: string, vars: Record<string, string | number>): string;
+}
+
+export interface UseTranslationsReturn {
+  t: TranslationFunction;
+}
+
+export function useTranslations(locale?: Locale): UseTranslationsReturn;
+export function getPageTranslations(locale: Locale, page: string): Record<string, any>;
+export function getTranslation(locale: Locale, key: string, defaultValue?: string): string;
+```
+
+---
+
+## Best Practices
+
+<Check>
+  Use `getPageTranslations` for server components (faster, no hook overhead)
+</Check>
+
+<Check>
+  Use `useTranslations` hook for client components with state/effects
+</Check>
+
+<Check>
+  Always provide English translations as fallback
+</Check>
+
+<Check>
+  Use variable interpolation for dynamic content: `{{ variable }}`
+</Check>
+
+<Check>
+  Keep translation keys organized by page/feature
+</Check>
+
+<Warning>
+  Don't call `useTranslations` conditionally - it's a React hook
+</Warning>
+
+<Warning>
+  HTML in translations (like `<b>`) will be returned as string - use `dangerouslySetInnerHTML` if needed
+</Warning>
+
+---
+
+## Examples from Codebase
+
+### Example 1: Home Page (Server)
+
+```javascript:app/[locale]/page.js
+export default async function Inicio({ params }) {
+  const { locale } = await params;
+  const t = getPageTranslations(locale, 'home');
+
+  return (
+    <section className="py-20 text-center">
+      <h1>{t.title}</h1>
+      <p>{t.subtitle} <span>50%</span></p>
+      <p>{t.description}</p>
+      <Link href={`/${locale}/upload`}>
+        {t.compressButton}
+      </Link>
+    </section>
+  );
+}
+```
+
+### Example 2: Upload Page (Client)
+
+```javascript:app/[locale]/upload/page.js
+'use client';
+
+export default function HomePage({ params }) {
+  const [locale, setLocale] = useState(null);
+  const { t } = useTranslations(locale || 'en');
+  
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file.name.endsWith('.zip')) {
+      setError(t('upload.errors.zipOnly'));
+      return;
+    }
+    if (file.size > MAX_SIZE) {
+      setError(t('upload.errors.sizeLimit'));
+      return;
+    }
+  };
+  
+  return (
+    <main>
+      <h1>{t('upload.title')}</h1>
+      <p>{t('upload.dragDrop')}</p>
+    </main>
+  );
+}
+```
+
+### Example 3: Status Page with Variables
+
+```javascript:app/[locale]/status/[id]/page.js
+const { t } = useTranslations(locale || 'en');
+
+if (typeof cola === 'string' && cola.includes('/')) {
+  const [posicion, total] = cola.split('/');
+  const message = t('status.queuePositionTotal', { posicion, total });
+  // "Position 5 of 10 in queue"
+}
+```
+
+### Example 4: Download Page with HTML
+
+```javascript:app/[locale]/download/[id]/page.js
+const porcentajeCompresion = 50;
+
+<p
+  dangerouslySetInnerHTML={{
+    __html: t('download.compressionRatio', { porcentaje: porcentajeCompresion })
+  }}
+/>
+// Renders: "Compressed by <b>50%</b>!"
+```

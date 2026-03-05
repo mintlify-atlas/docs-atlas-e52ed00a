@@ -1,0 +1,251 @@
+---
+title: File Upload
+description: Chunked upload system supporting files up to 4GB with progress tracking
+---
+
+## Overview
+
+MC World Compressor uses a sophisticated chunked upload system that allows users to upload large Minecraft world files (up to 4GB) with real-time progress tracking and drag-and-drop support.
+
+## Upload Specifications
+
+<CardGroup cols={2}>
+  <Card title="Chunk Size" icon="puzzle-piece">
+    50MB per chunk
+  </Card>
+  
+  <Card title="Max File Size" icon="hard-drive">
+    4GB (4,294,967,296 bytes)
+  </Card>
+  
+  <Card title="Supported Formats" icon="file-zipper">
+    .zip, .tar, .tar.gz
+  </Card>
+  
+  <Card title="Upload Method" icon="upload">
+    Drag & drop or file picker
+  </Card>
+</CardGroup>
+
+## How Chunked Upload Works
+
+The upload system splits large files into manageable chunks to ensure reliable transfers even for large worlds.
+
+### Implementation Details
+
+From `app/[locale]/upload/page.js:129-177`:
+
+```javascript
+const tamañoChunk = 50 * 1024 * 1024; // 50MB
+const chunksTotales = Math.ceil(fichero.size / tamañoChunk);
+const idSubida = Date.now().toString() + Math.floor(Math.random() * 1000);
+
+for (let chunkIndex = 0; chunkIndex < chunksTotales; chunkIndex++) {
+  const start = chunkIndex * tamañoChunk;
+  const end = Math.min(start + tamañoChunk, fichero.size);
+  const chunk = fichero.slice(start, end);
+
+  const formData = new FormData();
+  formData.append('mundo_comprimido', chunk);
+  formData.append('fileName', fichero.name);
+  formData.append('uploadId', idSubida);
+  formData.append('chunkIndex', chunkIndex);
+  formData.append('totalChunks', chunksTotales);
+  formData.append('isLastChunk', chunkIndex === chunksTotales - 1 ? 'true' : 'false');
+
+  const response = await fetch(`${backendUrl}/api/subir`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  setProgresoSubida(Math.round(((chunkIndex + 1) / chunksTotales) * 100));
+}
+```
+
+### Chunk Parameters
+
+Each chunk is uploaded with metadata:
+
+| Parameter | Description |
+|-----------|-------------|
+| `mundo_comprimido` | The binary chunk data |
+| `fileName` | Original file name |
+| `uploadId` | Unique identifier for this upload session |
+| `chunkIndex` | Current chunk number (0-based) |
+| `totalChunks` | Total number of chunks in the file |
+| `isLastChunk` | Boolean indicating if this is the final chunk |
+
+## File Validation
+
+The system validates files before upload:
+
+### Format Validation
+
+From `app/[locale]/upload/page.js:95-104`:
+
+```javascript
+const nombre = file.name.toLowerCase();
+const esZip = nombre.endsWith('.zip');
+const esTarGz = nombre.endsWith('.tar.gz');
+const esTar = !esTarGz && nombre.endsWith('.tar');
+
+if (!(esZip || esTar || esTarGz)) {
+  setError(t('upload.errors.zipOnly'));
+  setFichero(null);
+  return;
+}
+```
+
+### Size Validation
+
+From `app/[locale]/upload/page.js:106-111`:
+
+```javascript
+const MAX_TAMAÑO = 4 * 1024 * 1024 * 1024; // 4GB en bytes
+if (file.size > MAX_TAMAÑO) {
+  setError(t('upload.errors.sizeLimit'));
+  setFichero(null);
+  return;
+}
+```
+
+<Warning>
+  Files larger than 4GB will be rejected. Ensure your world file is under this limit before uploading.
+</Warning>
+
+## Progress Tracking
+
+The upload progress is calculated based on completed chunks:
+
+```javascript
+setProgresoSubida(Math.round(((chunkIndex + 1) / chunksTotales) * 100));
+```
+
+Users see a real-time progress bar and percentage:
+
+```jsx
+<div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+  <div 
+    className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300 ease-in-out"
+    style={{ width: `${progresoSubida}%` }}
+  ></div>
+</div>
+```
+
+## Drag and Drop Support
+
+The upload area supports drag and drop functionality with visual feedback:
+
+### Implementation
+
+From `app/[locale]/upload/page.js:187-228`:
+
+```javascript
+onDragOver={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!subiendo) {
+    e.currentTarget.classList.add('border-blue-500');
+  }
+}}
+
+onDrop={(e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  e.currentTarget.classList.remove('border-blue-500');
+  
+  if (subiendo) return;
+  
+  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0];
+    // Validation logic...
+    setFichero(file);
+    setError(null);
+  }
+}}
+```
+
+<Tip>
+  The drop zone provides visual feedback by changing border color when files are dragged over it.
+</Tip>
+
+## Upload States
+
+The upload component manages several states:
+
+```javascript
+const [fichero, setFichero] = useState(null);           // Selected file
+const [subiendo, setSubiendo] = useState(false);        // Upload in progress
+const [progresoSubida, setProgresoSubida] = useState(0); // Progress percentage
+const [serverId, setServerId] = useState(null);         // Job ID after upload
+const [error, setError] = useState(null);               // Error messages
+```
+
+## Large File Handling
+
+For files larger than 500MB, users receive a special notification when uploading the final chunk:
+
+From `app/[locale]/upload/page.js:132-138`:
+
+```javascript
+const archivoPesado = fichero.size > 500 * 1024 * 1024; // 500MB
+
+for (let chunkIndex = 0; chunkIndex < chunksTotales; chunkIndex++) {
+  if (chunkIndex === chunksTotales - 1 && archivoPesado) {
+    setMostrarAvisoUltimoChunk(true);
+  }
+  // Upload logic...
+}
+```
+
+This warning alerts users that the final chunk may take longer to process.
+
+## Upload Protection
+
+The system prevents accidental navigation away during upload:
+
+From `app/[locale]/upload/page.js:70-87`:
+
+```javascript
+useEffect(() => {
+  const handleBeforeUnload = (e) => {
+    if (subiendo) {
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    }
+  };
+
+  if (subiendo) {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.history.pushState(null, '', window.location.pathname);
+  }
+
+  return () => {
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+  };
+}, [subiendo, locale]);
+```
+
+<Info>
+  Users will receive a browser warning if they attempt to close the page while an upload is in progress.
+</Info>
+
+## Success Handling
+
+After successful upload, the user is redirected to the status page:
+
+From `app/[locale]/upload/page.js:61-68`:
+
+```javascript
+useEffect(() => {
+  if (serverId && locale) {
+    const timer = setTimeout(() => {
+      router.push(`/${locale}/status/${serverId}`);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }
+}, [serverId, router, locale]);
+```
+
+The `serverId` is returned from the backend after the last chunk is processed successfully.

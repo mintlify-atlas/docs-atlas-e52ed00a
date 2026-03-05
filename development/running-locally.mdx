@@ -1,0 +1,237 @@
+---
+title: 'Running Locally'
+description: 'Run the MC World Compressor Frontend on your local machine'
+---
+
+## Development Server
+
+Start the development server to begin working on the project:
+
+<CodeGroup>
+
+```bash npm
+npm run dev
+```
+
+```bash yarn
+yarn dev
+```
+
+```bash pnpm
+pnpm dev
+```
+
+</CodeGroup>
+
+The development server will start at [http://localhost:3000](http://localhost:3000).
+
+<Tip>
+Open your browser and navigate to `http://localhost:3000` to see the application running.
+</Tip>
+
+## Development Workflow
+
+### Hot Module Replacement (HMR)
+
+Next.js automatically refreshes your browser when you make changes:
+
+- **React components**: Instant updates without losing state
+- **CSS files**: Live reload of styles
+- **API routes**: Automatic restart on changes
+
+<Note>
+You don't need to manually restart the server when editing files. Changes are reflected immediately in the browser.
+</Note>
+
+### Editing Pages
+
+To modify pages:
+
+1. Navigate to `app/[locale]/` directory
+2. Edit the relevant page component
+3. Save the file
+4. See changes instantly in your browser
+
+### Editing Components
+
+To modify components:
+
+1. Open files in the `components/` directory
+2. Make your changes
+3. Save the file
+4. Components using this file will automatically update
+
+### Testing Multiple Languages
+
+The application supports internationalization. Test different languages by navigating to:
+
+- English: `http://localhost:3000/en`
+- Spanish: `http://localhost:3000/es`
+- Hindi: `http://localhost:3000/hi`
+- Arabic: `http://localhost:3000/ar`
+
+## Building for Production
+
+### Create a Production Build
+
+Build the application for production:
+
+<CodeGroup>
+
+```bash npm
+npm run build
+```
+
+```bash yarn
+yarn build
+```
+
+```bash pnpm
+pnpm build
+```
+
+</CodeGroup>
+
+This command:
+
+1. Compiles and optimizes your code
+2. Generates static pages where possible
+3. Creates a `.next` directory with production assets
+4. Runs `next-sitemap` to generate sitemap.xml
+
+<Note>
+The build process may take a few minutes depending on your project size.
+</Note>
+
+### Run Production Build Locally
+
+After building, you can test the production build locally:
+
+<CodeGroup>
+
+```bash npm
+npm start
+```
+
+```bash yarn
+yarn start
+```
+
+```bash pnpm
+pnpm start
+```
+
+</CodeGroup>
+
+This starts a production server at [http://localhost:3000](http://localhost:3000).
+
+<Warning>
+Always test your production build locally before deploying to ensure everything works correctly.
+</Warning>
+
+## Common Development Tasks
+
+### Linting Code
+
+Run ESLint to check for code quality issues:
+
+```bash
+npm run lint
+```
+
+This checks your code against Next.js best practices and catches common errors.
+
+### Checking for Build Errors
+
+Before committing code, ensure it builds successfully:
+
+```bash
+npm run build
+```
+
+Fix any errors that appear during the build process.
+
+### Clearing the Cache
+
+If you experience unexpected behavior, try clearing the Next.js cache:
+
+```bash
+rm -rf .next
+npm run dev
+```
+
+This removes the `.next` build directory and forces a fresh build.
+
+### Viewing API Routes
+
+API routes are located in `app/api/`. Access them at:
+
+```
+http://localhost:3000/api/[route-name]
+```
+
+For example, if you have `app/api/status/route.js`, access it at:
+
+```
+http://localhost:3000/api/status
+```
+
+## Environment-Specific Behavior
+
+### Development Mode
+
+When running `npm run dev`:
+
+- Detailed error messages are shown
+- Source maps are generated for debugging
+- Hot reload is enabled
+- Performance is slower than production
+
+### Production Mode
+
+When running `npm start` (after `npm run build`):
+
+- Optimized and minified code
+- No source maps (unless configured)
+- Faster performance
+- Error messages are less detailed
+
+## Troubleshooting
+
+### Port Already in Use
+
+If port 3000 is already in use, you can specify a different port:
+
+```bash
+PORT=3001 npm run dev
+```
+
+### Module Not Found Errors
+
+If you encounter module errors, try reinstalling dependencies:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Backend Connection Issues
+
+If the frontend can't connect to the backend:
+
+1. Verify `NEXT_PUBLIC_BACKEND_URL` is set correctly in `.env`
+2. Ensure the backend server is running
+3. Check for CORS issues in browser console
+4. Verify HTTPS/HTTP protocol matching
+
+<Tip>
+Check the browser's Network tab in DevTools to see API request failures and error messages.
+</Tip>
+
+## Next Steps
+
+Now that you can run the project locally:
+
+- Start developing new features
+- Test your changes across different languages
+- Build and deploy to production when ready

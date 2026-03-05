@@ -1,0 +1,206 @@
+---
+title: 'Back Button'
+description: 'Client-side navigation button for browser history'
+---
+
+## Overview
+
+The `BackButton` component is a simple, reusable client-side button that navigates users back to the previous page using the browser's history API. It's a lightweight wrapper around `window.history.back()` that can be styled with custom classes and display custom content.
+
+## Props
+
+<ParamField path="children" type="React.ReactNode" required>
+  The content to display inside the button (text, icons, or other elements)
+</ParamField>
+
+<ParamField path="className" type="string">
+  CSS classes to apply to the button for custom styling
+</ParamField>
+
+## Key Features
+
+- **Client-Side Component**: Uses 'use client' directive for browser API access
+- **Browser History Navigation**: Uses native `window.history.back()` method
+- **Fully Customizable**: Accepts any content as children and custom styling
+- **Lightweight**: Minimal code with no external dependencies
+- **Type Safety**: Proper button type attribute set to "button"
+
+## Usage Examples
+
+### Basic Text Button
+
+```jsx
+import BackButton from '@/components/BackButton';
+
+export default function UploadPage() {
+  return (
+    <div>
+      <BackButton className="text-blue-600 hover:underline">
+        ← Go Back
+      </BackButton>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+### Styled Button with Icon
+
+```jsx
+import BackButton from '@/components/BackButton';
+
+export default function ResultsPage() {
+  return (
+    <div>
+      <BackButton className="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </BackButton>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+### With Translation Support
+
+```jsx
+import BackButton from '@/components/BackButton';
+import { getPageTranslations } from '@/lib/translations';
+
+export default function LocalizedPage({ locale }) {
+  const t = getPageTranslations(locale, 'common');
+  
+  return (
+    <div>
+      <BackButton className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+        {t.back}
+      </BackButton>
+      {/* Page content */}
+    </div>
+  );
+}
+```
+
+## Implementation
+
+```jsx
+"use client";
+
+export default function BackButton({ children, className }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.history.back()}
+      className={className}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+## How It Works
+
+1. **Client Directive**: The `"use client"` directive enables the component to run in the browser and access the `window` object
+2. **Event Handler**: The `onClick` handler calls `window.history.back()` when clicked
+3. **Browser History**: The browser navigates to the previous entry in the session history
+4. **Type Attribute**: The `type="button"` prevents the button from submitting forms if used within one
+
+## Common Styling Patterns
+
+### Primary Action Button
+```jsx
+<BackButton className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded">
+  Back
+</BackButton>
+```
+
+### Secondary/Ghost Button
+```jsx
+<BackButton className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
+  ← Back
+</BackButton>
+```
+
+### With Icon and Text
+```jsx
+<BackButton className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+  <svg className="w-4 h-4" /* ... */>
+    {/* Arrow icon */}
+  </svg>
+  <span>Go Back</span>
+</BackButton>
+```
+
+## Best Practices
+
+1. **Provide Clear Labeling**: Use descriptive text or icons so users understand the action
+2. **Consider Translation**: Wrap button text in translation functions for i18n support
+3. **Add Visual Feedback**: Include hover states and transitions for better UX
+4. **Accessibility**: Ensure sufficient color contrast and touch target size
+5. **Alternative Navigation**: Provide alternative navigation methods (breadcrumbs, menu) as history navigation may not always be available
+
+## Browser Compatibility
+
+The `window.history.back()` method is supported in all modern browsers:
+- Chrome/Edge: ✓
+- Firefox: ✓
+- Safari: ✓
+- Mobile browsers: ✓
+
+## Limitations
+
+- **No History**: If there's no previous page in the history, nothing happens
+- **External Referrers**: May navigate away from your site if user came from external link
+- **Browser Behavior**: Behavior depends on browser's history implementation
+
+## Alternative Approaches
+
+For more controlled navigation, consider using Next.js router:
+
+```jsx
+"use client";
+import { useRouter } from 'next/navigation';
+
+export default function BackButton({ children, className }) {
+  const router = useRouter();
+  
+  return (
+    <button
+      type="button"
+      onClick={() => router.back()}
+      className={className}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+Or navigate to a specific route:
+
+```jsx
+"use client";
+import { useRouter } from 'next/navigation';
+
+export default function BackButton({ children, className, fallbackHref = '/' }) {
+  const router = useRouter();
+  
+  return (
+    <button
+      type="button"
+      onClick={() => router.push(fallbackHref)}
+      className={className}
+    >
+      {children}
+    </button>
+  );
+}
+```
+
+## Dependencies
+
+None - This component uses only native browser APIs and React.
