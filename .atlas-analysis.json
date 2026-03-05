@@ -1,0 +1,98 @@
+{
+  "projectType": "frontend",
+  "projectName": "MC World Compressor",
+  "projectDescription": "A Next.js web application for compressing Minecraft worlds using intelligent chunk removal and optimization.",
+  "theme": "almond",
+  "primaryColor": "#956624",
+  "lightColor": "#4e7a19",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "development/setup",
+              "development/configuration",
+              "development/running-locally"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/compression",
+              "features/file-upload",
+              "features/internationalization"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "components/navbar",
+              "components/language-selector",
+              "components/footer",
+              "components/back-button"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/production",
+              "deployment/environment-variables",
+              "deployment/https-requirements"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Routes",
+            "pages": [
+              "api/pages",
+              "api/backend-integration"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/i18n",
+              "api/translations"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Chunked file upload up to 4GB",
+    "Multi-language support (EN/ES/HI/AR)",
+    "Real-time compression status tracking",
+    "Dark mode support",
+    "Intelligent chunk removal and optimization",
+    "Backend API proxy integration"
+  ],
+  "publicApiSurface": [
+    "/[locale]/ (Home page)",
+    "/[locale]/upload (Upload page)",
+    "/[locale]/status/[id] (Status tracking)",
+    "/[locale]/download/[id] (Download page)",
+    "/api/cola (Queue status)",
+    "/api/proxy/descargar/[id] (Download proxy)",
+    "/api/proxy/estado/[id] (Status proxy)",
+    "getPageTranslations(locale, page)",
+    "useTranslations(locale)",
+    "i18n.locales",
+    "i18n.defaultLocale"
+  ]
+}
